@@ -1,0 +1,8 @@
+rm -rf    rtm_cuda
+ 
+Building file: 
+Invoking: GCC C Linker
+# remember: libs must be included AFTER .c files
+nvcc -o rtm_cuda -I"../../lib/cwp/include" "-I../../lib/cwp/include -I../../lib/cwp/src/Complex/include" -I"../include" -I"./include" -O3 -w --ftz=false --prec-div=true --fmad=false -arch=sm_60 -L"../../lib/cwp/lib" -L"../lib"   ./src/fd.cu ./src/mod_main.cu  -lsu -lpar -lcwp -lm -lrtm-base
+/bin/sh: nvcc: command not found
+make: *** [rtm_cuda] Error 127

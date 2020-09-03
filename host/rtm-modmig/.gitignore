@@ -1,0 +1,8 @@
+mod_main*
+rtm_modmig_*
+dobs/
+img/*.bin
+output*
+input*.dat
+profile.mon
+debug/

@@ -1,0 +1,37 @@
+RTM-MODMIG
+
+This program can perform both parallel RTM 
+Modeling or Migration, using MPI.
+
+Dir structure:
+	src:
+		Source code
+	include:
+		Source headers
+	lib:
+		Required libs for linking
+
+	build:
+		current supported models.
+			testmod:	simple 4 layer model
+			marmousi:   sampled marmousi
+			pluto: 		full plutaço
+			spluto: 	sampled pluto
+
+Each output folder contains scripts
+for building and scheduling executions
+with SLURM. 
+Use script sbatchrun.sh to schedule
+several executions with different
+fixed-point nbits.
+Example:
+
+> ./sbatchrun.sh "path_to_model" nThreads nTests
+
+, will schedule executions with 'nTests' 
+different bit-lengths, using several MPI processes
+and 'nThreads' OpenMP threads per process.
+
+Modeling outputs are stored into a 'dobs/' folder
+inside each build/model, while migration outputs
+are stored into 'img/' folder.

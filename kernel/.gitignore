@@ -1,0 +1,6 @@
+bin/
+build/
+global_work/
+versions/
+reports/
+test/

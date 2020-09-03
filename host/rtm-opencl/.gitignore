@@ -1,0 +1,11 @@
+output/*
+perf/*
+
+rtm_opencl
+rtm_opencl_pac
+rtm_opencl_cpu
+rtm_opencl_gpu
+rtm_opencl_emu
+s*-perf.data
+*perf.data
+*perf.data.old
