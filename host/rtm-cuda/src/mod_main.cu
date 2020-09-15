@@ -7,6 +7,8 @@ August, 2016 */
 #include <time.h>
 #include "fd.h"
 #include <sys/time.h>
+#include <cuda_runtime.h>
+#include <cuda_profiler_api.h>
 extern "C" {
 	#include "cwp.h"
 	#include "su.h"
@@ -21,7 +23,7 @@ char *sdoc[] = {	/* self documentation */
 /* global variables */
 
 /* file names */
-char *tmpdir = NULL, *vpfile = NULL, *model = NULL, *datfile = NULL, *vel_ext_file = NULL, file[100];
+char *tmpdir = NULL, *vpfile = NULL, *datfile = NULL, *vel_ext_file = NULL, file[100];
 
 /* size */
 int nz, nx, nt;
@@ -44,11 +46,16 @@ int *sx;
 /* prototypes */
 
 int main (int argc, char **argv){
-    struct timeval st, et;
+  cudaProfilerStart();
+		struct timeval st, et;
     int elapsed;
-    float execTime;
+	float execTime;
+	clock_t begin, end;
+	long int time_spent;
+ 	begin = clock();
 	gettimeofday(&st, NULL);
-/* model file and data pointers */
+	
+	/* model file and data pointers */
 	FILE *fsource = NULL, *fvel_ext = NULL, *fd_obs = NULL, *fvp = NULL, *fsns = NULL,*fsns2 = NULL, *fsnr = NULL, *fimg = NULL, *flim = NULL, *fimg_lap = NULL;
 
 	/* iteration variables */
@@ -66,7 +73,6 @@ int main (int argc, char **argv){
 	float ***swf, ***upb, ***snaps, **vel2, ***d_obs, ***vel_ext_rnd;
 	float **imloc, **img, **img_lap;
 
-
 	/* initialization admiting self documentation */
 	initargs(argc, argv);
 	requestdoc(1);
@@ -75,7 +81,6 @@ int main (int argc, char **argv){
 	MUSTGETPARSTRING("tmpdir",&tmpdir);		// directory for data
 	MUSTGETPARSTRING("vpfile",&vpfile);		// vp model
 	MUSTGETPARSTRING("datfile",&datfile);	// observed data (seismogram)
-	MUSTGETPARSTRING("model",&model);		// vp model
 	MUSTGETPARINT("nz",&nz); 				// number of samples in z
 	MUSTGETPARINT("nx",&nx); 				// number of samples in x
 	MUSTGETPARINT("nt",&nt); 				// number of time steps
@@ -103,23 +108,18 @@ int main (int argc, char **argv){
 	fprintf(stdout,"## dz = %f, dx = %f, dt = %f \n",dz,dx,dt);
 	fprintf(stdout,"## ns = %d, sz = %d, fsx = %d, ds = %d, gz = %d \n",ns,sz,fsx,ds,gz);
 	fprintf(stdout,"## order = %d, nzb = %d, nxb = %d, F = %f, rnd = %d \n",order,nzb,nxb,fac,rnd);
-
 	/* create source vector  */
-
 	srce = alloc1float(nt);
-	// ricker_wavelet(nt, dt, fpeak, srce);
-
+	ricker_wavelet(nt, dt, fpeak, srce);
 	sx = alloc1int(ns);
 	for(is=0; is<ns; is++){
 		sx[is] = fsx + is*ds + nxb;
 	}
 	sz += nzb;
 	gz += nzb;
-
 	/* add boundary to models */
 	nze = nz + 2 * nzb;
 	nxe = nx + 2 * nxb;
-
 	/*read randomic vel. models (per source) */
 	if(vel_ext_flag){
 		vel_ext_rnd = alloc3float(nze,nxe,ns);
@@ -176,7 +176,7 @@ int main (int argc, char **argv){
 	PPR = alloc2float(nze,nxe);
 	PR = alloc2float(nze,nxe);
 	upb = alloc3float(order/2,nxe,nt);
-	swf = alloc3float(nz,nx,nt);
+	// swf = alloc3float(nz,nx,nt);
 	snaps = alloc3float(nze,nxe,2);
 	imloc = alloc2float(nz,nx);
 	img = alloc2float(nz,nx);
@@ -221,7 +221,8 @@ int main (int argc, char **argv){
 
 		memset(*PP,0,nze*nxe*sizeof(float));
 		memset(*P,0,nze*nxe*sizeof(float));
-
+    
+		cudaProfilerStart();
 		fd_forward(order,P,PP,vel2,upb,nze,nxe,nt,is,sz,sx,srce);
 		fprintf(stdout,"\n");
 
@@ -243,6 +244,7 @@ int main (int argc, char **argv){
 		/* Reverse propagation */
 		fd_back(order,P,PP,PR,PPR,vel2,upb,nze,nxe,nt,is,sz,gz,snaps,imloc,d_obs_aux);
 		fprintf(stdout,"\n");
+    cudaProfilerStop();
 		
 		/* stack migrated images */
 		for(iz=0; iz<nz; iz++){
@@ -252,40 +254,16 @@ int main (int argc, char **argv){
 		}
 	}
 	
-	extern int wrTransferCnt;
-	extern int rdTransferCnt;
-	extern float fwAVGTime;
-	extern float bwAVGTime;
-	extern float kernelAVGTime;
-	extern float wrAVGTime;
-	extern float rdAVGTime;
-	extern float deviceAVGTime; // rd+wr+kernel
-
+	cudaProfilerStop();
+	// cudaDeviceReset();
+#ifdef  PERF_COUNTERS
 	fd_print_report(nxe, nze);
 	gettimeofday(&et, NULL);
    	elapsed = ((et.tv_sec - st.tv_sec) * 1000000) + (et.tv_usec - st.tv_usec);
    	execTime += (elapsed*1.0);
    	printf("> Exec Time    = %.1f (s)\n",execTime/1000000.0);
 	printf("> ================================================ \n\n");
-
-	// char fname[100];
-	// sprintf(fname, "tmp/report_%s_ns%d_nt%d.dat", model, ns, nt);
-	// FILE *report = fopen(fname, "w");
-
-	// if (report != NULL){
-	// 	float devtime = (deviceAVGTime);
-	// 	float unitnorm=1000. ; // for results in seconds
-	// 	fprintf(report, "[execvars]\n");
-	// 	fprintf(report, "exec_time=%.2f\n", execTime/1000000);
-	// 	fprintf(report, "dev_time=%.2f\n", devtime/1000000);
-	// 	fprintf(report, "host_time=%.2f\n", (execTime - devtime)/1000000);
-	// 	fprintf(report, "wr_time=%.2f\n", 0.0);
-	// 	fprintf(report, "rd_time=%.2f\n", 0.0);
-	// 	fclose(report);
-	// }else{
-	// 	printf("error!\n");
-	// }
-
+#endif
 	fwrite(*img,sizeof(float),nz*nx,fimg);
 
 	fwrite(*img_lap,sizeof(float),nz*nx,fimg_lap);
@@ -297,8 +275,8 @@ int main (int argc, char **argv){
 	fclose(fimg_lap);
 
     /* release memory */
-    fd_destroy();
-	// taper_destroy();
+  fd_destroy();
+	taper_destroy();
 	free1int(sx);
 	free1float(srce);
 	free2float(vp);
@@ -316,5 +294,7 @@ int main (int argc, char **argv){
 	free3float(upb);
 	free3float(d_obs);
 	if(vel_ext_flag) free3float(vel_ext_rnd);
+	end = clock();
+	time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
 	return(CWP_Exit());
 }

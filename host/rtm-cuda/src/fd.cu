@@ -7,8 +7,19 @@ extern "C" {
 }
 #include <sys/time.h>
 #include <cuda.h>
+#include <cuda_runtime.h>
+#include <cuda_profiler_api.h>
 #include <math.h>
-#define sizeblock 32 
+#define sizeblock 8 
+
+void cudaCheck(){
+    cudaError_t err=cudaGetLastError();
+    if(err!=cudaSuccess){
+      printf("%s\n", cudaGetErrorString(err));
+      exit(1);
+    }
+}
+
 
 #ifdef PERF_COUNTERS
 	int wrTransferCnt;
@@ -65,12 +76,13 @@ float *calc_coefs(int order);
 void fd_init_cuda(int order, int nxe, int nze, 
 	int nxb, int nzb, int nt, int ns, float fac){
 	float dfrac; 
+	// cudaProfilerSart();
    	nxbin=nxb; nzbin=nzb; 
    	brdBufferLength = nxb*sizeof(float);
    	mtxBufferLength = (nxe*nze)*sizeof(float);
    	coefsBufferLength = (order+1)*sizeof(float);
    	upbBufferLength = nt*nxe*(order/2)*sizeof(float);
-		obsBufferLength = nt*(nxe-(2*nxb))*sizeof(float);
+	obsBufferLength = nt*(nxe-(2*nxb))*sizeof(float);
    	imgBufferLength = (nxe-(2*nxb))*(nze-(2*nzb))*sizeof(float);
 
 	taper_x = alloc1float(nxb);
@@ -87,36 +99,31 @@ void fd_init_cuda(int order, int nxe, int nze,
 
     
 	// Create a Device pointers
-	cudaMalloc(&d_v2, mtxBufferLength);
-	cudaMalloc(&d_p, mtxBufferLength);
-	cudaMalloc(&d_pp, mtxBufferLength);
-	cudaMalloc(&d_pr, mtxBufferLength);
-	cudaMalloc(&d_ppr, mtxBufferLength);
-	cudaMalloc(&d_swap, mtxBufferLength);
-	cudaMalloc(&d_laplace, mtxBufferLength);
+	cudaMalloc((void **) &d_v2, mtxBufferLength);
+	cudaMalloc((void **) &d_p, mtxBufferLength);
+	cudaMalloc((void **) &d_pp, mtxBufferLength);
+	cudaMalloc((void **) &d_pr, mtxBufferLength);
+	cudaMalloc((void **) &d_ppr, mtxBufferLength);
+	cudaMalloc((void **) &d_swap, mtxBufferLength);
+	cudaMalloc((void **) &d_laplace, mtxBufferLength);
 	
-	cudaMalloc(&d_upb, upbBufferLength);
-	cudaMalloc(&d_sis, obsBufferLength);
-	cudaMalloc(&d_img, imgBufferLength);
-	cudaMalloc(&d_coefs_x, coefsBufferLength);
-	cudaMalloc(&d_coefs_z, coefsBufferLength);
-	cudaMalloc(&d_taperx, brdBufferLength);
-	cudaMalloc(&d_taperz, brdBufferLength);
+	cudaMalloc((void **) &d_upb, upbBufferLength);
+	cudaMalloc((void **) &d_sis, obsBufferLength);
+	cudaMalloc((void **) &d_img, imgBufferLength);
+	cudaMalloc((void **) &d_coefs_x, coefsBufferLength);
+	cudaMalloc((void **) &d_coefs_z, coefsBufferLength);
+	cudaMalloc((void **) &d_taperx, brdBufferLength);
+	cudaMalloc((void **) &d_taperz, brdBufferLength);
 
 	int div_x, div_z; 
 	// Set a Grid for the execution on the device
-	int tx = ((nxe - 1) / 32 + 1) * 32;
-	int tz = ((nze - 1) / 32 + 1) * 32;
-	int tx_b = ((nxb - 1) / 32 + 1) * 32; 
-	int tz_b = ((nzb - 1) / 32 + 1) * 32; 
-
-	div_x = (float) tx/(float) sizeblock; 
-	div_z = (float) tz/(float) sizeblock; 
+	div_x = (float) nxe/(float) sizeblock; 
+	div_z = (float) nze/(float) sizeblock; 
 	gridx = (int) ceil(div_x);
 	gridz = (int) ceil(div_z);
 
-	div_x = (float) tx_b/(float) sizeblock; 
-	div_z = (float) tz_b/(float) sizeblock; 
+	div_x = (float) nxb/(float) sizeblock; 
+	div_z = (float) nzb/(float) sizeblock; 
 	gridBorder_x = (int) ceil(div_x); 
 	gridBorder_z = (int) ceil(div_z); 
 	
@@ -199,6 +206,7 @@ void fd_destroy(){
 		cudaFree(d_sis);
 		cudaFree(d_img);
 		cudaFree(d_upb);
+
 	#endif
 	return;
 }
@@ -441,6 +449,7 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 	 	kernel_time<<<dimGrid, dimBlock>>>(nx,nz,d_p,d_pp,d_v2,d_laplace,dt2);
 	 	kernel_src<<<dimGridSingle, dimBlock>>>(nz,d_pp,sx[is],sz,srce[it]); 
 	 	kernel_upb<<<dimGridUpb, dimBlock>>>(order,nx,nz,nzbin,nt,d_pp,d_upb,it,0);
+		cudaCheck();
 
      	if((it+1)%100 == 0){fprintf(stdout,"\r* it = %d / %d (%d%)",it+1,nt,(100*(it+1)/nt));fflush(stdout);}
      	// op_L_counter++;

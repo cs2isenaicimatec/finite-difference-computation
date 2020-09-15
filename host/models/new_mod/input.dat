@@ -1,7 +1,7 @@
 tmpdir=./output
 vpfile=../models/new_mod/vel-koslov.1
 datfile=../models/new_mod/dobs.6
-model=../models/new_mod/vel_ext_rnd.6
+vel_ext_file=../models/new_mod/vel_ext_rnd.6
 nz=195
 nx=315
 nt=1700
