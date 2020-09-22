@@ -1,11 +1,14 @@
 #include <stdio.h>
 #include <cuda.h>
+#include <math.h>
 
 void fd_init(int order, int nx, int nz, float dx, float dz);
 void fd_init_cuda(int order, int nxe, int nze);
 float *calc_coefs(int order);
+static void makeo2 (float *coef,int order);
 
 #define sizeblock 32
+#define PI (3.141592653589793)
 
 float *d_p;
 float *d_laplace, *d_coefs_x, *d_coefs_z;
@@ -75,6 +78,7 @@ float *calc_coefs(int order)
                         coef[6] = 1./90.;
                         break;
                 case 8:
+
                         coef[0] = -1./560.;
                         coef[1] = 8./315.;
                         coef[2] = -1./5.;
@@ -85,9 +89,44 @@ float *calc_coefs(int order)
                         coef[7] = 8./315.;
                         coef[8] = -1./560.;
                         break;
+                default:
+                        makeo2(coef,order);
         }
 
         return coef;
+}
+
+static void makeo2 (float *coef,int order){
+        float h_beta, alpha1=0.0;
+        float alpha2=0.0;
+        float  central_term=0.0;
+        float coef_filt=0;
+        float arg=0.0;
+        float  coef_wind=0.0;
+        int msign,ix;
+
+        float alpha = .54;
+        float beta = 6.;
+        h_beta = 0.5*beta;
+        alpha1=2.*alpha-1.0;
+        alpha2=2.*(1.0-alpha);
+        central_term=0.0;
+
+        msign=-1;
+
+        for (ix=1; ix <= order/2; ix++){
+                msign=-msign ;
+                coef_filt = (2.*msign)/(ix*ix);
+                arg = PI*ix/(2.*(order/2+2));
+                coef_wind=pow((alpha1+alpha2*cos(arg)*cos(arg)),h_beta);
+                coef[order/2+ix] = coef_filt*coef_wind;
+                central_term = central_term + coef[order/2+ix];
+                coef[order/2-ix] = coef[order/2+ix];
+        }
+
+        coef[order/2]  = -2.*central_term;
+
+        return;
 }
 
 void fd_init_cuda(int order, int nxe, int nze)
@@ -134,6 +173,14 @@ void fd_init(int order, int nx, int nz, float dx, float dz)
                 coefs_z[io] = dz2inv * coefs[io];
                 coefs_x[io] = dx2inv * coefs[io];
         }
+        printf("\n=== coef x ===\n");
+        for(int i = 0; i < (order+1)*sizeof(float); i++){
+                printf("%f\n", coefs_x[i]);
+        }
+        printf("\n=== coef z ===\n");
+        for(int i = 0; i < (order+1)*sizeof(float); i++){
+                printf("%f\n", coefs_z[i]);
+        }
 
 
         fd_init_cuda(order,nx,nz);
@@ -145,7 +192,7 @@ int main (int argc, char **argv)
 {
         // constantes
         int nz = 195, nx = 315, nxb = 50, nzb = 50, nxe, nze, order = 8;
-        float dz = 10.00000, dx = 10.000000;
+        float dz = 10.000000, dx = 10.000000;
 
 
 
@@ -156,7 +203,6 @@ int main (int argc, char **argv)
         dim3 dimGrid(gridx, gridz);
         dim3 dimBlock(sizeblock, sizeblock);
 
-
         // arquivos
         FILE *finput;
         FILE *foutput;
@@ -166,11 +212,16 @@ int main (int argc, char **argv)
         float input_data[mtxBufferLength], output_data[mtxBufferLength];
         printf("lendo arquivo...\n");
         fread(input_data, sizeof(input_data), 1, finput);
-        printf("%.15f\n", input_data[1341]);
+        printf("\n=== input: ===\n");
+        for(int i = 1321; i < 1341; i++){
+                printf("%.15f\n", input_data[i]);
+        }
+
         fclose(finput);
         // utilização do kernel
         cudaMemcpy(d_p, input_data, mtxBufferLength, cudaMemcpyHostToDevice);
-
+        cudaMemcpy(d_coefs_x, coefs_x, coefsBufferLength, cudaMemcpyHostToDevice);
+        cudaMemcpy(d_coefs_z, coefs_z, coefsBufferLength, cudaMemcpyHostToDevice);
 
         kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
 
@@ -187,8 +238,10 @@ int main (int argc, char **argv)
         // salvando a saída
         printf("salvando saída...\n");
         foutput = fopen("output_teste.bin", "wb");
-        printf("%.15f\n", output_data[1341]);
-        printf("Esperado: 0.000010451854905\n");
+        printf("\n=== output ===\n");
+        for(int i = 1321; i < 1341; i++){
+                printf("%.15f\n", output_data[i]);
+        }
         printf("escrevendo arquivo\n");
         fwrite(output_data, sizeof(output_data), 1, foutput);
         fclose(foutput);
