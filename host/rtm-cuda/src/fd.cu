@@ -415,7 +415,7 @@ void write_buffers(float **p, float **pp, float **v2, float ***upb,
 }
 
 void fd_forward(int order, float **p, float **pp, float **v2, 
-   float ***upb, int nz, int nx, int nt, int is, int sz, int *sx, float *srce){
+   float ***upb, int nz, int nx, int nt, int is, int sz, int *sx, float *srce, int propag){
 	int elapsed;
     struct timeval st, et, stCR, etCR, stCW, etCW, stK, etK;
     //Start total time 
@@ -461,7 +461,23 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 
 	// start read time 
 	gettimeofday(&stCR, NULL);
- 	
+	if(propag == 5){
+		float input[mtxBufferLength], output[mtxBufferLength];
+		FILE *finput;
+		finput = fopen("./input.bin", "wb");
+		cudaMemcpy(input, d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
+		cudaMemcpy(output, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
+		fwrite(input,sizeof(input),1,finput);
+		printf("\n=== input: ===\n");
+		for(int i = 1321; i < 1341; i++){
+				printf("%.15f\n", input[i]);
+		}
+		printf("\n=== output: ===\n");
+		for(int i = 1321; i < 1341; i++){
+				printf("%.15f\n", output[i]);
+		}
+		fclose(finput);
+	}
  	cudaMemcpy(p[0], d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
  	cudaMemcpy(pp[0], d_pp, mtxBufferLength, cudaMemcpyDeviceToHost);
  	cudaMemcpy(upb[0][0], d_upb, upbBufferLength, cudaMemcpyDeviceToHost);
