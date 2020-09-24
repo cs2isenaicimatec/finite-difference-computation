@@ -463,12 +463,15 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 	gettimeofday(&stCR, NULL);
 	if(propag == 5){
 		float input[mtxBufferLength], output[mtxBufferLength];
-		FILE *finput;
-		finput = fopen("~/finite-difference-computation/simplified-fd/input.bin", "wb");
+		FILE *finput, *foutput;
+		finput = fopen("../../../simplified-fd/input.bin", "wb");
+		finput = fopen("../../../simplified-fd/output_original.bin", "wb");
 		cudaMemcpy(input, d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
 		cudaMemcpy(output, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
 		fwrite(input,sizeof(input),1,finput);
+		fwrite(output,sizeof(output),1,foutput);
 		fclose(finput);
+		fclose(foutput);
 	}
  	cudaMemcpy(p[0], d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
  	cudaMemcpy(pp[0], d_pp, mtxBufferLength, cudaMemcpyDeviceToHost);
