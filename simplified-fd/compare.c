@@ -27,42 +27,45 @@ void main ()
 
 void compare(float *input1, float *input2, int len)
 {
-        float dif[len], mae, sum, acc;
-        int count = 0;
-        for (int i = 0; i < len; i++)
-        {
-                dif[i] = fabsf(input1[i] - input2[i]);
-                sum += dif[i];
-                if (input1[i] == input2[i])
-                {
-                        count++;
-                }
-        }
-        printf("len:%i - count: %i\n", len, count);
-        mae = sum / len;
-        acc = (float)count/(float)len*100;
-        printf("Accuracy: %.5f%\n", acc);
-        rmse(dif,len);
-        printf("MAE: %.5f\n",mae);
-        stdev(mae, dif, len);
+    int i;
+    float dif[len], mae, sum, acc;
+    int count = 0;
+    for (i = 0; i < len; i++)
+    {
+            dif[i] = fabsf(input1[i] - input2[i]);
+            sum += dif[i];
+            if (input1[i] == input2[i])
+            {
+                    count++;
+            }
+    }
+    printf("len:%i - count: %i\n", len, count);
+    mae = sum / len;
+    acc = (float)count/(float)len*100;
+    printf("Accuracy: %.5f%\n", acc);
+    rmse(dif,len);
+    printf("MAE: %.5f\n",mae);
+    stdev(mae, dif, len);
 }
 
 void rmse(float *dif, int len)
 {
-        float sum = 0.0;
-        for (int i = 0; i < len; i++)
-        {
-                sum += pow(dif[i], 2);
-        }
-        printf("RMSE: %.5f\n", sqrt(sum/len));
+    int i;
+    float sum = 0.0;
+    for (i = 0; i < len; i++)
+    {
+            sum += pow(dif[i], 2);
+    }
+    printf("RMSE: %.5f\n", sqrt(sum/len));
 }
 
 void stdev(float mean, float *dif, int len)
 {
-        float p = 0.0, sigma;
-        for(int i = 0; i < len; i++){
-                p = p + pow(dif[i] - mean, 2);
-        }
-        sigma = sqrt(p/(len-1));
-        printf("Standard deviation: %.5f\n", sigma);
+    int i;
+    float p = 0.0, sigma;
+    for(i = 0; i < len; i++){
+            p = p + pow(dif[i] - mean, 2);
+    }
+    sigma = sqrt(p/(len-1));
+    printf("Standard deviation: %.5f\n", sigma);
 }
