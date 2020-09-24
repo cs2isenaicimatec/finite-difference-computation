@@ -192,7 +192,7 @@ int main (int argc, char **argv)
         
         FILE *finput;
         // leitura do input
-        finput = fopen("./input.bin", "rb");
+        finput = fopen("input.bin", "rb");
 
         float input_data[mtxBufferLength];
         printf("lendo arquivo...\n");
