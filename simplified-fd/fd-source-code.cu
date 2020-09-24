@@ -213,7 +213,7 @@ int main (int argc, char **argv)
         // salvando a saída
         FILE *foutput;
         printf("salvando saída...\n");
-        foutput = fopen("output_teste.bin", "wb");
+        foutput = fopen("output_cuda.bin", "wb");
         fwrite(output_data, sizeof(output_data), 1, foutput);
         fclose(foutput);
 
