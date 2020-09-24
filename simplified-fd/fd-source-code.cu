@@ -145,12 +145,8 @@ void fd_init_cuda(int order, int nxe, int nze)
         int tx = ((nxe - 1) / 32 + 1) * 32;
         int tz = ((nze - 1) / 32 + 1) * 32;
 
-
-
         div_x = (float) tx/(float) sizeblock;
         div_z = (float) tz/(float) sizeblock;
-
-
 
         gridx = (int) ceil(div_x);
         gridz = (int) ceil(div_z);
@@ -173,15 +169,6 @@ void fd_init(int order, int nx, int nz, float dx, float dz)
                 coefs_z[io] = dz2inv * coefs[io];
                 coefs_x[io] = dx2inv * coefs[io];
         }
-        printf("\n=== coef x ===\n");
-        for(int i = 0; i < (order+1)*sizeof(float); i++){
-                printf("%f\n", coefs_x[i]);
-        }
-        printf("\n=== coef z ===\n");
-        for(int i = 0; i < (order+1)*sizeof(float); i++){
-                printf("%f\n", coefs_z[i]);
-        }
-
 
         fd_init_cuda(order,nx,nz);
 
@@ -194,30 +181,24 @@ int main (int argc, char **argv)
         int nz = 195, nx = 315, nxb = 50, nzb = 50, nxe, nze, order = 8;
         float dz = 10.000000, dx = 10.000000;
 
-
-
         nxe = nx + 2 * nxb;
         nze = nz + 2 * nzb;
         // inicialização
         fd_init(order,nxe,nze,dx,dz);
+        
         dim3 dimGrid(gridx, gridz);
         dim3 dimBlock(sizeblock, sizeblock);
 
-        // arquivos
+        
         FILE *finput;
-        FILE *foutput;
         // leitura do input
         finput = fopen("./input.bin", "rb");
 
-        float input_data[mtxBufferLength], output_data[mtxBufferLength];
+        float input_data[mtxBufferLength];
         printf("lendo arquivo...\n");
         fread(input_data, sizeof(input_data), 1, finput);
-        printf("\n=== input: ===\n");
-        for(int i = 1321; i < 1341; i++){
-                printf("%.15f\n", input_data[i]);
-        }
-
         fclose(finput);
+
         // utilização do kernel
         cudaMemcpy(d_p, input_data, mtxBufferLength, cudaMemcpyHostToDevice);
         cudaMemcpy(d_coefs_x, coefs_x, coefsBufferLength, cudaMemcpyHostToDevice);
@@ -225,26 +206,17 @@ int main (int argc, char **argv)
 
         kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
 
+        float output_data[mtxBufferLength];
+        
         cudaMemcpy(output_data, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
-        cudaDeviceSynchronize();
-        cudaError_t error = cudaGetLastError();
-        if(error != cudaSuccess)
-        {
-                // print the CUDA error message and exit
-                printf("CUDA error: %s\n", cudaGetErrorString(error));
-                exit(-1);
-        }
-
+        
         // salvando a saída
+        FILE *foutput;
         printf("salvando saída...\n");
         foutput = fopen("output_teste.bin", "wb");
-        printf("\n=== output ===\n");
-        for(int i = 1321; i < 1341; i++){
-                printf("%.15f\n", output_data[i]);
-        }
-        printf("escrevendo arquivo\n");
         fwrite(output_data, sizeof(output_data), 1, foutput);
         fclose(foutput);
+
         // free memory device
 
         cudaFree(d_p);
