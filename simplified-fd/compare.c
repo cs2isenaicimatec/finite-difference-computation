@@ -1,4 +1,5 @@
 #include<stdio.h>
+#include<math.h>
 
 void compare(float *input1, float *input2, int len);
 void rmse(float *dif, int len);
