@@ -223,7 +223,7 @@ int main (int argc, char **argv){
 		memset(*P,0,nze*nxe*sizeof(float));
     
 		cudaProfilerStart();
-		fd_forward(order,P,PP,vel2,upb,nze,nxe,nt,is,sz,sx,srce);
+		fd_forward(order,P,PP,vel2,upb,nze,nxe,nt,is,sz,sx,srce,is);
 		fprintf(stdout,"\n");
 
 		for(iz=0; iz<nze; iz++){

@@ -9,7 +9,7 @@ void fd_init(int order, int nx, int nz, int nxb, int nzb, int nt,
 void fd_reinit(int order, int nx, int nz);
 
 void fd_forward(int order, float **p, float **pp, float **v2, 
-    float ***upb, int nz, int nx, int nt, int is, int sz, int *sx, float *srce);
+    float ***upb, int nz, int nx, int nt, int is, int sz, int *sx, float *srce, int propag);
 
 void fd_back(int order, float **p, float **pp, float **pr, float **ppr, float **v2, float ***upb,
     int nz, int nx, int nt, int is, int sz, int gz, float ***snaps, float **imloc, float **d_obs); 

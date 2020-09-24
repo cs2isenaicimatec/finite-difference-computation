@@ -72,6 +72,9 @@ static float *coefs_x = NULL;
 static void makeo2 (float *coef,int order);
 
 float *calc_coefs(int order);
+void compare(float *input1, float *input2, int len);
+void rmse(float *dif, int len);
+void stdev(float mean, float *dif, int len);
 
 void fd_init_cuda(int order, int nxe, int nze, 
 	int nxb, int nzb, int nt, int ns, float fac){
@@ -393,8 +396,7 @@ __global__ void kernel_img(int nx, int nz, int nxb, int nzb,
 }
 
 void write_buffers(float **p, float **pp, float **v2, float ***upb, 
-    float *taperx, float *taperz, float **d_obs, float **imloc, int is, int flag){
-	
+    float *taperx, float *taperz, float **d_obs, float **imloc, int is, int flag){	
 	if(flag == 0){
 		cudaMemcpy(d_p, p[0], mtxBufferLength, cudaMemcpyHostToDevice);
 		cudaMemcpy(d_pp, pp[0], mtxBufferLength, cudaMemcpyHostToDevice);
@@ -415,7 +417,7 @@ void write_buffers(float **p, float **pp, float **v2, float ***upb,
 }
 
 void fd_forward(int order, float **p, float **pp, float **v2, 
-   float ***upb, int nz, int nx, int nt, int is, int sz, int *sx, float *srce){
+   float ***upb, int nz, int nx, int nt, int is, int sz, int *sx, float *srce, int propag){
 	int elapsed;
     struct timeval st, et, stCR, etCR, stCW, etCW, stK, etK;
     //Start total time 
@@ -439,14 +441,15 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 
    	// start Kernel time  
    	gettimeofday(&stK, NULL);
+	
    	for (int it = 0; it < nt; it++){
 	 	d_swap  = d_pp; 
 	 	d_pp = d_p; 
 	 	d_p = d_swap; 
 
 	 	kernel_tapper<<<dimGridTaper, dimBlock>>>(nx,nz,nxbin,nzbin,d_p,d_pp,d_taperx,d_taperz);
-	 	kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
-	 	kernel_time<<<dimGrid, dimBlock>>>(nx,nz,d_p,d_pp,d_v2,d_laplace,dt2);
+	 	kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);          
+		kernel_time<<<dimGrid, dimBlock>>>(nx,nz,d_p,d_pp,d_v2,d_laplace,dt2);
 	 	kernel_src<<<dimGridSingle, dimBlock>>>(nz,d_pp,sx[is],sz,srce[it]); 
 	 	kernel_upb<<<dimGridUpb, dimBlock>>>(order,nx,nz,nzbin,nt,d_pp,d_upb,it,0);
 		cudaCheck();
@@ -461,15 +464,38 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 
 	// start read time 
 	gettimeofday(&stCR, NULL);
- 	
- 	cudaMemcpy(p[0], d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
+ 	if(propag == 5){
+		float input[mtxBufferLength], output[mtxBufferLength];
+	        FILE *finput;
+		finput = fopen("./input.bin", "wb");
+                cudaMemcpy(input, d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
+		cudaMemcpy(output, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
+		fwrite(input,sizeof(input),1,finput);
+		printf("\n=== input: ===\n");
+		for(int i = 1321; i < 1341; i++){
+			printf("%.15f\n", input[i]);
+		}
+		// ====== teste ======
+		//finput = fopen("./input.bin", "rb");
+        	//float input_data[mtxBufferLength], output_data[mtxBufferLength];
+        	//printf("lendo arquivo...\n");
+	        //fread(input_data, sizeof(input_data), 1, finput);
+		//compare(input, input_data, (int)mtxBufferLength);
+
+		printf("\n=== output: ===\n");
+		for(int i = 1321; i < 1341; i++){
+                        printf("%.15f\n", output[i]);
+                }
+		fclose(finput);
+ 	}
+	cudaMemcpy(p[0], d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
  	cudaMemcpy(pp[0], d_pp, mtxBufferLength, cudaMemcpyDeviceToHost);
  	cudaMemcpy(upb[0][0], d_upb, upbBufferLength, cudaMemcpyDeviceToHost);
 	// Calc avg read time  
 	gettimeofday(&etCR, NULL);
 	elapsed = ((etCR.tv_sec - stCR.tv_sec) * 1000000) + (etCR.tv_usec - stCR.tv_usec);
 	rdAVGTime += (elapsed*1.0);
-    rdTransferCnt++;	
+    	rdTransferCnt++;	
  	gettimeofday(&et, NULL);
 	elapsed = ((et.tv_sec - st.tv_sec) * 1000000) + (et.tv_usec - st.tv_usec);
 	fwAVGTime += (elapsed*1.0);    
@@ -548,3 +574,45 @@ void fd_back(int order, float **p, float **pp, float **pr, float **ppr, float **
 
 }
 
+
+void compare(float *input1, float *input2, int len)
+{
+	float dif[len], mae, sum, acc;
+	int count = 0;
+	for (int i = 0; i < len; i++)
+	{		
+		dif[i] = fabsf(input1[i] - input2[i]);
+		sum += dif[i];
+		if (input1[i] == input2[i])
+		{		
+			count++;
+		}
+	}
+	printf("len:%i - count: %i\n", len, count);
+	mae = sum / len;
+	acc = (float)count/(float)len*100;
+	printf("Accuracy: %.5f%\n", acc);
+	rmse(dif,len);
+	printf("MAE: %.5f\n",mae);
+	stdev(mae, dif, len);
+}
+
+void rmse(float *dif, int len)
+{
+	float sum = 0.0;
+	for (int i = 0; i < len; i++)
+	{
+		sum += pow(dif[i], 2);
+	}
+	printf("RMSE: %.5f\n", sqrt(sum/len));
+}
+
+void stdev(float mean, float *dif, int len)
+{
+	float p = 0.0, sigma;
+	for(int i = 0; i < len; i++){
+        	p = p + pow(dif[i] - mean, 2); 
+	}
+    	sigma = sqrt(p/(len-1)); 
+    	printf("Standard deviation: %.5f\n", sigma);
+}
