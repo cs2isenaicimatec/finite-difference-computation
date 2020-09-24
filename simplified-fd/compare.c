@@ -1,15 +1,15 @@
 #include <stdio.h>
 #include <math.h>
 
-void compare(float *input1, float *input2, int len);
-void rmse(float *dif, int len);
-void stdev(float mean, float *dif, int len);
+void compare(double *input1, double *input2, int len);
+void rmse(double *dif, int len);
+void stdev(double mean, double *dif, int len);
 
 
 void main ()
 {
-    int mtxBufferLength = (315 + 2 * 50)*(195 + 2 * 50)*sizeof(float);
-    float output_cuda[mtxBufferLength], output_dpc[mtxBufferLength];
+    int mtxBufferLength = (315 + 2 * 50)*(195 + 2 * 50)*sizeof(double);
+    double output_cuda[mtxBufferLength], output_dpc[mtxBufferLength];
 
     FILE *foutput_cuda, *foutput_dpc;
     foutput_cuda = fopen("output_cuda.bin", "rb");
@@ -25,10 +25,10 @@ void main ()
     compare(output_cuda, output_dpc, mtxBufferLength);
 }
 
-void compare(float *input1, float *input2, int len)
+void compare(double *input1, double *input2, int len)
 {
     int i;
-    float dif[len], mae, sum, acc;
+    double dif[len], mae, sum, acc;
     int count = 0;
     for (i = 0; i < len; i++)
     {
@@ -39,32 +39,32 @@ void compare(float *input1, float *input2, int len)
                     count++;
             }
     }
-    mae = sum / (float)len;
-    acc = (float)count/(float)len*100;
+    mae = sum / (double)len;
+    acc = (double)count/(double)len*100;
     printf("Accuracy: %.5f%\n", acc);
     rmse(dif,len);
     printf("MAE: %.15f\n",mae);
     stdev(mae, dif, len);
 }
 
-void rmse(float *dif, int len)
+void rmse(double *dif, int len)
 {
     int i;
-    float sum = 0.0;
+    double sum = 0.0;
     for (i = 0; i < len; i++)
     {
             sum += pow(dif[i], 2);
     }
-    printf("RMSE: %.15f\n", sqrt(sum/(float)len));
+    printf("RMSE: %.15f\n", sqrt(sum/(double)len));
 }
 
-void stdev(float mean, float *dif, int len)
+void stdev(double mean, double *dif, int len)
 {
     int i;
-    float p = 0.0, sigma;
+    double p = 0.0, sigma;
     for(i = 0; i < len; i++){
             p = p + pow(dif[i] - mean, 2);
     }
-    sigma = sqrt(p/((float)len-1));
+    sigma = sqrt(p/((double)len-1));
     printf("Standard deviation: %.15f\n", sigma);
 }
