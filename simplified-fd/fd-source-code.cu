@@ -1,9 +1,7 @@
 #include <stdio.h>
 #include <cuda.h>
 #include <math.h>
-extern "C" {
-	#include "cwp.h"
-}
+#include "su.h"
 
 void fd_init(int order, int nx, int nz, float dx, float dz);
 void fd_init_cuda(int order, int nxe, int nze);
