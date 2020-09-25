@@ -466,7 +466,6 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 		input = alloc2float(nz,nx);
 		output = alloc2float(nz,nx);
 		FILE *finput, *foutput;
-		printf("\nAbrindo arquivos\n");
 		finput = fopen("../../simplified-fd/input.bin", "wb");
 		foutput = fopen("../../simplified-fd/output_original.bin", "wb");
 		cudaMemcpy(input, d_p, mtxBufferLength, cudaMemcpyDeviceToHost);

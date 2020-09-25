@@ -28,12 +28,7 @@ void main ()
 void compare(double *input1, double *input2, int len)
 {
     int i;
-<<<<<<< HEAD
-    float dif[len], acc;
-    double sum, mae;
-=======
     double dif[len], mae, sum, acc;
->>>>>>> 20e9fb8a499159f13e4f4d6bf4746941428a7f1b
     int count = 0;
     for (i = 0; i < len; i++)
     {
@@ -49,11 +44,7 @@ void compare(double *input1, double *input2, int len)
 	    }
     }
     mae = sum / (double)len;
-<<<<<<< HEAD
-    acc = (float)count/(float)len*100;
-=======
     acc = (double)count/(double)len*100;
->>>>>>> 20e9fb8a499159f13e4f4d6bf4746941428a7f1b
     printf("Accuracy: %.5f%\n", acc);
     rmse(dif,len);
     printf("MAE: %.15f\n",mae);
