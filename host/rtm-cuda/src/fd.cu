@@ -462,18 +462,18 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 	// start read time 
 	gettimeofday(&stCR, NULL);
 	if(propag == 5){
-		float **input, **output;
-		input = alloc2float(nz,nx);
-		output = alloc2float(nz,nx);
+		float *input, *output;
+		input = (float*)malloc(mtxBufferLength);
+		output = (float*)malloc(mtxBufferLength);
 		FILE *finput, *foutput;
 		finput = fopen("../../simplified-fd/input.bin", "wb");
 		foutput = fopen("../../simplified-fd/output_original.bin", "wb");
 		cudaMemcpy(input, d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
 		cudaMemcpy(output, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
-		fwrite(input,sizeof(float),nx*nz,finput);
-		fwrite(output,sizeof(float),nx*nz,foutput);
-		free2float(input);
-		free2float(output);
+		fwrite(input,sizeof(input),1,finput);
+		fwrite(output,sizeof(output),1,foutput);
+		free(input);
+		free(output);
 		fclose(finput);
 		fclose(foutput);
 	}
