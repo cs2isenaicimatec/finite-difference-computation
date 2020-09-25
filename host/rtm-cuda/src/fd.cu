@@ -472,6 +472,8 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 		cudaMemcpy(output, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
 		fwrite(input,sizeof(float),nx*nz,finput);
 		fwrite(output,sizeof(float),nx*nz,foutput);
+		free2float(input);
+		free2float(output);
 		fclose(finput);
 		fclose(foutput);
 	}
