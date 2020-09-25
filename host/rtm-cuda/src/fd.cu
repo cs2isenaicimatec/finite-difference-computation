@@ -462,7 +462,7 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 	// start read time 
 	gettimeofday(&stCR, NULL);
 	if(propag == 5){
-		float *input, *output;
+		float **input, **output;
 		input = alloc2float(nz,nx);
 		output = alloc2float(nz,nx);
 		FILE *finput, *foutput;
