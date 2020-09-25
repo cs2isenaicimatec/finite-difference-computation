@@ -464,12 +464,16 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 	if(propag == 5){
 		float input[mtxBufferLength], output[mtxBufferLength];
 		FILE *finput, *foutput;
+		printf("Abrindo arquivos\n");
 		finput = fopen("../../../simplified-fd/input.bin", "wb");
 		finput = fopen("../../../simplified-fd/output_original.bin", "wb");
+		printf("Copiando para host\n");
 		cudaMemcpy(input, d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
 		cudaMemcpy(output, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
+		printf("Escrevendo arquivos\n");
 		fwrite(input,sizeof(input),1,finput);
 		fwrite(output,sizeof(output),1,foutput);
+		printf("fechando arquivos\n");
 		fclose(finput);
 		fclose(foutput);
 	}
