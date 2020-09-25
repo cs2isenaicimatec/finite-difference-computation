@@ -207,7 +207,7 @@ int main (int argc, char **argv)
         finput = fopen("input.bin", "rb");
 
         float **input_data;
-        input = allocMatriz(nze,nxe);
+        input_data = allocMatriz(nze,nxe);
         printf("lendo arquivo...\n");
         fread(input_data, sizeof(input_data), 1, finput);
         fclose(finput);
