@@ -154,8 +154,6 @@ void fd_init_cuda(int order, int nxe, int nze)
         int tx = ((nxe - 1) / 32 + 1) * 32;
         int tz = ((nze - 1) / 32 + 1) * 32;
 
-
-
         div_x = (float) tx/(float) sizeblock;
         div_z = (float) tz/(float) sizeblock;
 
@@ -180,15 +178,6 @@ void fd_init(int order, int nx, int nz, float dx, float dz)
                 coefs_z[io] = dz2inv * coefs[io];
                 coefs_x[io] = dx2inv * coefs[io];
         }
-        // printf("\n=== coef x ===\n");
-        // for(int i = 0; i < (order+1)*sizeof(float); i++){
-        //         printf("%f\n", coefs_x[i]);
-        // }
-        // printf("\n=== coef z ===\n");
-        // for(int i = 0; i < (order+1)*sizeof(float); i++){
-        //         printf("%f\n", coefs_z[i]);
-        // }
-
 
         fd_init_cuda(order,nx,nz);
 
@@ -203,39 +192,32 @@ int main (int argc, char **argv)
         int nz = 195, nx = 315, nxb = 50, nzb = 50, nxe, nze, order = 8;
         float dz = 10.000000, dx = 10.000000;
 
-
-
         nxe = nx + 2 * nxb;
         nze = nz + 2 * nzb;
         // inicialização
         fd_init(order,nxe,nze,dx,dz);
+
         sycl::range<3> dimGrid(gridx, gridz, 1);
         sycl::range<3> dimBlock(sizeblock, sizeblock, 1);
 
-        // arquivos
         FILE *finput;
-        FILE *foutput;
         // leitura do input
-        finput = fopen("./input.bin", "rb");
+        finput = fopen("input.bin", "rb");
 
-        float input_data[mtxBufferLength], output_data[mtxBufferLength];
-        printf("lendo arquivo...\n");
+        float *input_data;
+        input_data = (float*)malloc(mtxBufferLength);
+				printf("lendo arquivo...\n");
         fread(input_data, sizeof(input_data), 1, finput);
-        printf("\n=== input: ===\n");
-        for(int i = 1321; i < 1341; i++){
-                printf("%.15f\n", input_data[i]);
-        }
-
         fclose(finput);
         // utilização do kernel
+				q_ct1.memcpy(d_coefs_x, coefs_x, coefsBufferLength).wait();
         q_ct1.memcpy(d_p, input_data, mtxBufferLength).wait();
-        q_ct1.memcpy(d_coefs_x, coefs_x, coefsBufferLength).wait();
-        q_ct1.memcpy(d_coefs_z, coefs_z, coefsBufferLength).wait();
-
+				q_ct1.memcpy(d_coefs_z, coefs_z, coefsBufferLength).wait();
         /*
-        DPCT1049:0: The workgroup size passed to the SYCL kernel may exceed the
-        limit. To get the device limit, query info::device::max_work_group_size.
-        Adjust the workgroup size if needed.
+        DPCT1049:0: The workgroup size passed to the SYCL kernel may
+         * exceed the limit. To get the device limit, query
+         * info::device::max_work_group_size. Adjust the workgroup size if
+         * needed.
         */
         q_ct1.submit([&](sycl::handler &cgh) {
                 auto dpct_global_range = dimGrid * dimBlock;
@@ -258,27 +240,21 @@ int main (int argc, char **argv)
                     });
         });
 
+        float *output_data;
+        output_data = (float*)malloc(mtxBufferLength);
+
         q_ct1.memcpy(output_data, d_laplace, mtxBufferLength).wait();
-        dev_ct1.queues_wait_and_throw();
-        /*
-        DPCT1010:1: SYCL uses exceptions to report errors and does not use the
-        error codes. The call was replaced with 0. You need to rewrite this
-        code.
-        */
-        int error = 0;
 
         // salvando a saída
+        FILE *foutput;
         printf("salvando saída...\n");
         foutput = fopen("output_teste.bin", "wb");
-        printf("\n=== output ===\n");
-        for(int i = 1321; i < 1341; i++){
-                printf("%.15f\n", output_data[i]);
-        }
-        printf("escrevendo arquivo\n");
         fwrite(output_data, sizeof(output_data), 1, foutput);
         fclose(foutput);
-        // free memory device
 
+        // free memory device
+        free(input_data);
+        free(output_data);
         sycl::free(d_p, q_ct1);
         sycl::free(d_laplace, q_ct1);
         sycl::free(d_coefs_x, q_ct1);
