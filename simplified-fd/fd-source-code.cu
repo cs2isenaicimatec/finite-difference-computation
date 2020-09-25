@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <cuda.h>
 #include <math.h>
+extern "C" {
+	#include "cwp.h"
+}
 
 void fd_init(int order, int nx, int nz, float dx, float dz);
 void fd_init_cuda(int order, int nxe, int nze);
@@ -194,7 +197,8 @@ int main (int argc, char **argv)
         // leitura do input
         finput = fopen("input.bin", "rb");
 
-        float input_data[mtxBufferLength];
+        float **input_data;
+        input = alloc2float(nze, nxe);
         printf("lendo arquivo...\n");
         fread(input_data, sizeof(input_data), 1, finput);
         fclose(finput);
