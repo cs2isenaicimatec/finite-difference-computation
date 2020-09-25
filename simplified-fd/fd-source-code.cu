@@ -1,12 +1,15 @@
 #include <stdio.h>
 #include <cuda.h>
 #include <math.h>
-#include "su.h"
+extern "C" {
+	#include "cwp.h"
+}
 
 void fd_init(int order, int nx, int nz, float dx, float dz);
 void fd_init_cuda(int order, int nxe, int nze);
 float *calc_coefs(int order);
 static void makeo2 (float *coef,int order);
+float** allocMatriz(int row, int col);
 
 #define sizeblock 32
 #define PI (3.141592653589793)
@@ -176,6 +179,17 @@ void fd_init(int order, int nx, int nz, float dx, float dz)
         return;
 }
 
+float** allocMatriz(int row, int col)
+{
+        int i;
+        float **m = (float**)malloc(row * sizeof(float*));
+        for (i = 0; i < row; i++)
+        {
+                m[i] = (float*)malloc(col*sizeof(float*));
+        }
+        return m;
+}
+
 int main (int argc, char **argv)
 {
         // constantes
@@ -196,7 +210,7 @@ int main (int argc, char **argv)
         finput = fopen("input.bin", "rb");
 
         float **input_data;
-        input = alloc2float(nze, nxe);
+        input = allocMatriz(nze,nxe);
         printf("lendo arquivo...\n");
         fread(input_data, sizeof(input_data), 1, finput);
         fclose(finput);
@@ -208,7 +222,8 @@ int main (int argc, char **argv)
 
         kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
 
-        float output_data[mtxBufferLength];
+        float **output_data;
+        output_data = allocMatriz(nze,nxe);
         
         cudaMemcpy(output_data, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
         
