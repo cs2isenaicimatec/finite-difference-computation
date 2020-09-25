@@ -462,20 +462,17 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 	// start read time 
 	gettimeofday(&stCR, NULL);
 	if(propag == 5){
-		float input[mtxBufferLength], output[mtxBufferLength];
+		float *input, *output;
+		input = alloc2float(nz,nx);
+		output = alloc2float(nz,nx);
 		FILE *finput, *foutput;
 		printf("\nAbrindo arquivos\n");
 		finput = fopen("../../simplified-fd/input.bin", "wb");
 		foutput = fopen("../../simplified-fd/output_original.bin", "wb");
-		printf("Copiando para host\n");
 		cudaMemcpy(input, d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
 		cudaMemcpy(output, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
-		printf("Escrevendo arquivos\n");
-		printf("Input...\n");
 		fwrite(input,sizeof(input),1,finput);
-		printf("Output...\n");
 		fwrite(output,sizeof(output),1,foutput);
-		printf("fechando arquivos\n");
 		fclose(finput);
 		fclose(foutput);
 	}
