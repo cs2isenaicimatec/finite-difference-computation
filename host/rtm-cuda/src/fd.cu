@@ -466,7 +466,7 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 		FILE *finput, *foutput;
 		printf("\nAbrindo arquivos\n");
 		finput = fopen("../../../simplified-fd/input.bin", "wb");
-		fouput = fopen("../../../simplified-fd/output_original.bin", "wb");
+		foutput = fopen("../../../simplified-fd/output_original.bin", "wb");
 		printf("Copiando para host\n");
 		cudaMemcpy(input, d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
 		cudaMemcpy(output, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
