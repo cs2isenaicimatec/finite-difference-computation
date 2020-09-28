@@ -111,6 +111,7 @@ void read_input(char *file)
                         printf("order = %i\n", order);
                 }
         }
+	printf("Fim da leitura do arquivo de entrada.\n\n");
 }
 
 __global__ void kernel_lap(int order, int nx, int nz, float * __restrict__ p, float * __restrict__ lap, float * __restrict__ coefsx, float * __restrict__ coefsz)
@@ -270,11 +271,12 @@ void fd_init(int order, int nx, int nz, float dx, float dz)
 int main (int argc, char **argv)
 {
         read_input(argv[1]);
-        if(ferror(finput))
-        {       
-                printf("Erro ao abrir o arquivo binário.\n");
-                return 1;
-        }
+	printf("Check error\n");
+       //if(ferror(finput))
+        //{       
+                //printf("Erro ao abrir o arquivo binário.\n");
+                //return 1;
+        //}
         printf("Calculando nxe e nze\n");
         nxe = nx + 2 * nxb;
         nze = nz + 2 * nzb;
