@@ -29,12 +29,10 @@ void read_input(char *file)
         char *line = NULL;
         size_t len = 0;
         ssize_t read;
-
-        fp = fopen("/etc/motd", "r");
-        if (fp == NULL)
+        if (finput == NULL)
                 exit(EXIT_FAILURE);
 
-        while ((read = getline(&line, &len, fp)) != -1) {
+        while ((read = getline(&line, &len, finput)) != -1) {
                 printf("Retrieved line of length %zu :\n", read);
                 printf("%s", line);
         }
