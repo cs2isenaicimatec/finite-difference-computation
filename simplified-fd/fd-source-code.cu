@@ -49,8 +49,56 @@ void read_input(char *file)
                 {
                         char *nz_char;
                         nz_char = strtok(line, "=");
-                        nz_char = strtok(NULL,"=");
-                        printf("%s", nz_char);
+                        if (strlen(nz_char) <= 2)
+                        {
+                                nz_char = strtok(NULL,"=");
+                                printf("%c", nz_char[0]);
+                        }
+                }
+                if(strstr(line,"nx") != NULL)
+                {
+                        char *nx_char;
+                        nx_char = strtok(line, "=");
+                        if (strlen(nz_char) <= 2)
+                        {
+                                nx_char = strtok(NULL,"=");
+                                printf("%c", nx_char[0]);
+                        }
+                }
+                if(strstr(line,"dz") != NULL)
+                {
+                        char *dz_char;
+                        dz_char = strtok(line, "=");
+                        dz_char = strtok(NULL,"=");
+                        printf("%c", dz_char[0]);
+                }
+                if(strstr(line,"dx") != NULL)
+                {
+                        char *dx_char;
+                        dx_char = strtok(line, "=");
+                        dx_char = strtok(NULL,"=");
+                        printf("%c", dx_char[0]);
+                }
+                if(strstr(line,"nzb") != NULL)
+                {
+                        char *nzb_char;
+                        nzb_char = strtok(line, "=");
+                        nzb_char = strtok(NULL,"=");
+                        printf("%c", nzb_char[0]);
+                }
+                if(strstr(line,"nxb") != NULL)
+                {
+                        char *nxb_char;
+                        nxb_char = strtok(line, "=");
+                        nxb_char = strtok(NULL,"=");
+                        printf("%c", nxb_char[0]);
+                }
+                if(strstr(line,"order") != NULL)
+                {
+                        char *order;
+                        order = strtok(line, "=");
+                        order = strtok(NULL,"=");
+                        printf("%c", order[0]);
                 }
         }
 
