@@ -111,8 +111,6 @@ void read_input(char *file)
                         printf("order = %i\n", order);
                 }
         }
-
-        free(line);
 }
 
 __global__ void kernel_lap(int order, int nx, int nz, float * __restrict__ p, float * __restrict__ lap, float * __restrict__ coefsx, float * __restrict__ coefsz)
