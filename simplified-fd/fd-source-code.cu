@@ -8,6 +8,7 @@ void fd_init(int order, int nx, int nz, float dx, float dz);
 void fd_init_cuda(int order, int nxe, int nze);
 float *calc_coefs(int order);
 static void makeo2 (float *coef,int order);
+void read_input(char *file);
 
 #define sizeblock 32
 #define PI (3.141592653589793)
@@ -188,7 +189,8 @@ float *calc_coefs(int order)
         return coef;
 }
 
-static void makeo2 (float *coef,int order){
+static void makeo2 (float *coef,int order)
+{
         float h_beta, alpha1=0.0;
         float alpha2=0.0;
         float  central_term=0.0;
@@ -271,48 +273,49 @@ int main (int argc, char **argv)
 {
         read_input(argv[1]);
         if(ferror(finput))
+        {       
                 printf("Erro ao abrir o arquivo binário.\n");
-        if(finput != NULL)
-        {
-                nxe = nx + 2 * nxb;
-                nze = nz + 2 * nzb;
-                // inicialização
-                fd_init(order,nxe,nze,dx,dz);
-
-                dim3 dimGrid(gridx, gridz);
-                dim3 dimBlock(sizeblock, sizeblock);
-                float *input_data;
-                input_data = (float*)malloc(mtxBufferLength);
-                printf("lendo arquivo...\n");
-                fread(input_data, sizeof(input_data), 1, finput);
-                fclose(finput);
-
-                // utilização do kernel
-                cudaMemcpy(d_p, input_data, mtxBufferLength, cudaMemcpyHostToDevice);
-                cudaMemcpy(d_coefs_x, coefs_x, coefsBufferLength, cudaMemcpyHostToDevice);
-                cudaMemcpy(d_coefs_z, coefs_z, coefsBufferLength, cudaMemcpyHostToDevice);
-
-                kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
-
-                float *output_data;
-                output_data = (float*)malloc(mtxBufferLength);
-                
-                cudaMemcpy(output_data, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
-                
-                // salvando a saída
-                FILE *foutput;
-                printf("salvando saída...\n");
-                foutput = fopen("output_cuda.bin", "wb");
-                fwrite(output_data, sizeof(output_data), 1, foutput);
-                fclose(foutput);
-
-                // free memory device
-                free(input_data);
-                free(output_data);
-                cudaFree(d_p);
-                cudaFree(d_laplace);
-                cudaFree(d_coefs_x);
-                cudaFree(d_coefs_z);
+                return 1;
         }
+        nxe = nx + 2 * nxb;
+        nze = nz + 2 * nzb;
+        // inicialização
+        fd_init(order,nxe,nze,dx,dz);
+
+        dim3 dimGrid(gridx, gridz);
+        dim3 dimBlock(sizeblock, sizeblock);
+
+        float *input_data;
+        input_data = (float*)malloc(mtxBufferLength);
+        printf("lendo arquivo...\n");
+        fread(input_data, sizeof(float), nze*nxe, finput);
+        fclose(finput);
+
+        // utilização do kernel
+        cudaMemcpy(d_p, input_data, mtxBufferLength, cudaMemcpyHostToDevice);
+        cudaMemcpy(d_coefs_x, coefs_x, coefsBufferLength, cudaMemcpyHostToDevice);
+        cudaMemcpy(d_coefs_z, coefs_z, coefsBufferLength, cudaMemcpyHostToDevice);
+
+        kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
+
+        float *output_data;
+        output_data = (float*)malloc(mtxBufferLength);
+        
+        cudaMemcpy(output_data, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
+        
+        // salvando a saída
+        FILE *foutput;
+        printf("salvando saída...\n");
+        foutput = fopen("output_cuda.bin", "wb");
+        fwrite(output_data, sizeof(float), nze*nxe, foutput);
+        fclose(foutput);
+
+        // free memory device
+        free(input_data);
+        free(output_data);
+        cudaFree(d_p);
+        cudaFree(d_laplace);
+        cudaFree(d_coefs_x);
+        cudaFree(d_coefs_z);
         return 0;
 }
