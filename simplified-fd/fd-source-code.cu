@@ -280,11 +280,12 @@ int main (int argc, char **argv)
         nxe = nx + 2 * nxb;
         nze = nz + 2 * nzb;
         // inicialização
+        printf("Iniciando fd.\n");
         fd_init(order,nxe,nze,dx,dz);
 
         dim3 dimGrid(gridx, gridz);
         dim3 dimBlock(sizeblock, sizeblock);
-
+        printf("Alocando input.\n");
         float *input_data;
         input_data = (float*)malloc(mtxBufferLength);
         printf("lendo arquivo...\n");
