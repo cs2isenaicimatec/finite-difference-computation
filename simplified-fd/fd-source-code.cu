@@ -13,7 +13,7 @@ void read_input(char *file);
 #define sizeblock 32
 #define PI (3.141592653589793)
 
-FILE *finput;
+char *path_file;
 
 float *d_p;
 float *d_laplace, *d_coefs_x, *d_coefs_z;
@@ -42,10 +42,8 @@ void read_input(char *file)
         while ((read = getline(&line, &len, fp)) != -1) {
                 if(strstr(line,"tmpdir") != NULL)
                 {
-                        char *path_file;
                         path_file = strtok(line, "=");
                         path_file = strtok(NULL,"=");
-                        finput = fopen(path_file, "rb");
                         printf("Local do arquivo: %s", path_file);
                 }
                 if(strstr(line,"nzb") != NULL)
@@ -111,6 +109,7 @@ void read_input(char *file)
                         printf("order = %i\n", order);
                 }
         }
+        
 }
 
 __global__ void kernel_lap(int order, int nx, int nz, float * __restrict__ p, float * __restrict__ lap, float * __restrict__ coefsx, float * __restrict__ coefsz)
@@ -270,11 +269,7 @@ void fd_init(int order, int nx, int nz, float dx, float dz)
 int main (int argc, char **argv)
 {
         read_input(argv[1]);
-        if(ferror(finput))
-        {       
-                printf("Erro ao abrir o arquivo binário.\n");
-                return 1;
-        }
+        
         printf("Calculando nxe e nze\n");
         nxe = nx + 2 * nxb;
         nze = nz + 2 * nzb;
@@ -285,6 +280,8 @@ int main (int argc, char **argv)
         dim3 dimGrid(gridx, gridz);
         dim3 dimBlock(sizeblock, sizeblock);
         printf("Alocando input.\n");
+        FILE *finput;
+        finput = fopen(path_file, "rb");
         float *input_data;
         input_data = (float*)malloc(mtxBufferLength);
         printf("lendo arquivo...\n");
