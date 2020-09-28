@@ -277,6 +277,7 @@ int main (int argc, char **argv)
                 printf("Erro ao abrir o arquivo binário.\n");
                 return 1;
         }
+        printf("Calculando nxe e nze\n");
         nxe = nx + 2 * nxb;
         nze = nz + 2 * nzb;
         // inicialização
