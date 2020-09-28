@@ -34,7 +34,7 @@ void compare(float *input1, float *input2, int len)
     int count = 0, length = 0;
     for (i = 0; i < len; i++)
     {
-        if (fabsf(input1[i]) < 1000000 && fabsf(input2[i]) < 1000000)
+        if (fabsf(input1[i]) < 1000 && fabsf(input2[i]) < 1000)
         {
             dif[i] = fabsf(input1[i] - input2[i]);
             sum += dif[i];
@@ -49,7 +49,7 @@ void compare(float *input1, float *input2, int len)
             dif[i] = Null;
         }
     }
-    mae = sum / (float)length;
+    mae = fabsf(sum) / (float)length;
     acc = (float)count/(float)len*100;
     printf("Accuracy: %.5f%\n", acc);
     rmse(dif,len);
