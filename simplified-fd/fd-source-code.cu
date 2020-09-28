@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <cuda.h>
 #include <math.h>
+#include <string.h>
 
 void fd_init(int order, int nx, int nz, float dx, float dz);
 void fd_init_cuda(int order, int nxe, int nze);
@@ -33,8 +34,16 @@ void read_input(char *file)
                 exit(EXIT_FAILURE);
 
         while ((read = getline(&line, &len, finput)) != -1) {
-                printf("Retrieved line of length %zu :\n", read);
-                printf("%s", line);
+                if(strstr(line,"tmpdir") != NULL)
+                {
+                        char *tok;
+                        tok = strtok(line, "=");
+                        while (tok != NULL)
+                        {
+                                printf("%s\n", tok);
+                                tok = strtok(NULL,"=");
+                        }
+                }
         }
 
         free(line);
