@@ -59,7 +59,7 @@ void read_input(char *file)
                 {
                         char *nx_char;
                         nx_char = strtok(line, "=");
-                        if (strlen(nz_char) <= 2)
+                        if (strlen(nx_char) <= 2)
                         {
                                 nx_char = strtok(NULL,"=");
                                 printf("%c", nx_char[0]);
