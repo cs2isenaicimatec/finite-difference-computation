@@ -22,6 +22,26 @@ static float *coefs = NULL;
 static float *coefs_z = NULL;
 static float *coefs_x = NULL;
 
+void read_input(char *file)
+{
+        FILE *finput;
+        finput = fopen(file, "r");
+        char *line = NULL;
+        size_t len = 0;
+        ssize_t read;
+
+        fp = fopen("/etc/motd", "r");
+        if (fp == NULL)
+                exit(EXIT_FAILURE);
+
+        while ((read = getline(&line, &len, fp)) != -1) {
+                printf("Retrieved line of length %zu :\n", read);
+                printf("%s", line);
+        }
+
+        free(line);
+}
+
 __global__ void kernel_lap(int order, int nx, int nz, float * __restrict__ p, float * __restrict__ lap, float * __restrict__ coefsx, float * __restrict__ coefsz)
 {
         int half_order=order/2;
@@ -177,54 +197,55 @@ void fd_init(int order, int nx, int nz, float dx, float dz)
 
 int main (int argc, char **argv)
 {
+        read_input(argv[1]);
         // constantes
-        int nz = 195, nx = 315, nxb = 50, nzb = 50, nxe, nze, order = 8;
-        float dz = 10.000000, dx = 10.000000;
+        // int nz = 195, nx = 315, nxb = 50, nzb = 50, nxe, nze, order = 8;
+        // float dz = 10.000000, dx = 10.000000;
 
-        nxe = nx + 2 * nxb;
-        nze = nz + 2 * nzb;
-        // inicialização
-        fd_init(order,nxe,nze,dx,dz);
+        // nxe = nx + 2 * nxb;
+        // nze = nz + 2 * nzb;
+        // // inicialização
+        // fd_init(order,nxe,nze,dx,dz);
         
-        dim3 dimGrid(gridx, gridz);
-        dim3 dimBlock(sizeblock, sizeblock);
+        // dim3 dimGrid(gridx, gridz);
+        // dim3 dimBlock(sizeblock, sizeblock);
 
         
-        FILE *finput;
-        // leitura do input
-        finput = fopen("input.bin", "rb");
+        // FILE *finput;
+        // // leitura do input
+        // finput = fopen("input.bin", "rb");
 
-        float *input_data;
-        input_data = (float*)malloc(mtxBufferLength);
-        printf("lendo arquivo...\n");
-        fread(input_data, sizeof(input_data), 1, finput);
-        fclose(finput);
+        // float *input_data;
+        // input_data = (float*)malloc(mtxBufferLength);
+        // printf("lendo arquivo...\n");
+        // fread(input_data, sizeof(input_data), 1, finput);
+        // fclose(finput);
 
-        // utilização do kernel
-        cudaMemcpy(d_p, input_data, mtxBufferLength, cudaMemcpyHostToDevice);
-        cudaMemcpy(d_coefs_x, coefs_x, coefsBufferLength, cudaMemcpyHostToDevice);
-        cudaMemcpy(d_coefs_z, coefs_z, coefsBufferLength, cudaMemcpyHostToDevice);
+        // // utilização do kernel
+        // cudaMemcpy(d_p, input_data, mtxBufferLength, cudaMemcpyHostToDevice);
+        // cudaMemcpy(d_coefs_x, coefs_x, coefsBufferLength, cudaMemcpyHostToDevice);
+        // cudaMemcpy(d_coefs_z, coefs_z, coefsBufferLength, cudaMemcpyHostToDevice);
 
-        kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
+        // kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
 
-        float *output_data;
-        output_data = (float*)malloc(mtxBufferLength);
+        // float *output_data;
+        // output_data = (float*)malloc(mtxBufferLength);
         
-        cudaMemcpy(output_data, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
+        // cudaMemcpy(output_data, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
         
-        // salvando a saída
-        FILE *foutput;
-        printf("salvando saída...\n");
-        foutput = fopen("output_cuda.bin", "wb");
-        fwrite(output_data, sizeof(output_data), 1, foutput);
-        fclose(foutput);
+        // // salvando a saída
+        // FILE *foutput;
+        // printf("salvando saída...\n");
+        // foutput = fopen("output_cuda.bin", "wb");
+        // fwrite(output_data, sizeof(output_data), 1, foutput);
+        // fclose(foutput);
 
-        // free memory device
-        free(input_data);
-        free(output_data);
-        cudaFree(d_p);
-        cudaFree(d_laplace);
-        cudaFree(d_coefs_x);
-        cudaFree(d_coefs_z);
+        // // free memory device
+        // free(input_data);
+        // free(output_data);
+        // cudaFree(d_p);
+        // cudaFree(d_laplace);
+        // cudaFree(d_coefs_x);
+        // cudaFree(d_coefs_z);
         return 0;
 }
