@@ -38,11 +38,9 @@ void read_input(char *file)
                 {
                         char *tok;
                         tok = strtok(line, "=");
-                        while (tok != NULL)
-                        {
-                                printf("%s\n", tok);
-                                tok = strtok(NULL,"=");
-                        }
+                        printf("%s\n", tok);
+                        tok = strtok(NULL,"=");
+                        printf("%s\n", tok);
                 }
         }
 
