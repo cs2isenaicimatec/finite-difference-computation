@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#define Null -99999
+
 void compare(float *input1, float *input2, int len);
 void rmse(float *dif, int len);
 void stdev(float mean, float *dif, int len);
@@ -44,7 +46,7 @@ void compare(float *input1, float *input2, int len)
         }
         else
         {
-            dif[i] = NULL;
+            dif[i] = Null;
         }
     }
     mae = sum / (float)length;
@@ -61,7 +63,7 @@ void rmse(float *dif, int len)
     float sum = 0.0;
     for (i = 0; i < len; i++)
     {
-        if (dif[i] != NULL)
+        if (dif[i] != Null)
         {
             sum += pow(dif[i], 2);
             length++;
@@ -75,7 +77,7 @@ void stdev(float mean, float *dif, int len)
     int i, length = 0;
     float p = 0.0, sigma;
     for(i = 0; i < len; i++){
-        if (dif[i] != NULL)
+        if (dif[i] != Null)
         {    
             p = p + pow(dif[i] - mean, 2);
             length++;
