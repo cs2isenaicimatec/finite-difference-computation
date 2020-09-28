@@ -51,9 +51,9 @@ void compare(float *input1, float *input2, int len)
     }
     mae = fabsf(sum) / (float)length;
     acc = (float)count/(float)len*100;
-    printf("Accuracy: %.5f%\n", acc);
+    printf("Accuracy: %.2f%\n", acc);
     rmse(dif,len);
-    printf("MAE: %.15f\n",mae);
+    printf("MAE: %.5f\n",mae);
     stdev(mae, dif, len);
 }
 
@@ -69,7 +69,7 @@ void rmse(float *dif, int len)
             length++;
         }
     }
-    printf("RMSE: %.15f\n", sqrt(sum/(float)length));
+    printf("RMSE: %.5f\n", sqrt(sum/(float)length));
 }
 
 void stdev(float mean, float *dif, int len)
@@ -84,5 +84,5 @@ void stdev(float mean, float *dif, int len)
         }
     }
     sigma = sqrt(p/((float)length-1));
-    printf("Standard deviation: %.15f\n", sigma);
+    printf("Standard deviation: %.5f\n", sigma);
 }
