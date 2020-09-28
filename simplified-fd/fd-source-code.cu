@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <cuda.h>
 #include <math.h>
 #include <string.h>
@@ -44,6 +45,7 @@ void read_input(char *file)
                         path_file = strtok(line, "=");
                         path_file = strtok(NULL,"=");
                         finput = fopen(path_file, "rb");
+                        printf("Local do arquivo: %s", path_file);
                 }
                 if(strstr(line,"nz") != NULL)
                 {
@@ -52,7 +54,8 @@ void read_input(char *file)
                         if (strlen(nz_char) <= 2)
                         {
                                 nz_char = strtok(NULL,"=");
-                                printf("%c\n", nz_char[0]);
+                                nz = atoi(nz_char);
+                                printf("nz = %i\n", nz);
                         }
                 }
                 if(strstr(line,"nx") != NULL)
@@ -62,7 +65,8 @@ void read_input(char *file)
                         if (strlen(nx_char) <= 2)
                         {
                                 nx_char = strtok(NULL,"=");
-                                printf("%c\n", nx_char[0]);
+                                nx = atoi(nx_char);
+                                printf("nx = %i\n", nx);
                         }
                 }
                 if(strstr(line,"dz") != NULL)
@@ -70,35 +74,40 @@ void read_input(char *file)
                         char *dz_char;
                         dz_char = strtok(line, "=");
                         dz_char = strtok(NULL,"=");
-                        printf("%c\n", dz_char[0]);
+                        dz = (float)atoi(dz_char);
+                        printf("dz = %f\n", dz);
                 }
                 if(strstr(line,"dx") != NULL)
                 {
                         char *dx_char;
                         dx_char = strtok(line, "=");
                         dx_char = strtok(NULL,"=");
-                        printf("%c\n", dx_char[0]);
+                        dx = (float)atoi(dx_char);
+                        printf("dx = %f\n", dx);
                 }
                 if(strstr(line,"nzb") != NULL)
                 {
                         char *nzb_char;
                         nzb_char = strtok(line, "=");
                         nzb_char = strtok(NULL,"=");
-                        printf("%c\n", nzb_char[0]);
+                        nzb = atoi(nzb_char);
+                        printf("nzb = %i\n", nzb);
                 }
                 if(strstr(line,"nxb") != NULL)
                 {
                         char *nxb_char;
                         nxb_char = strtok(line, "=");
                         nxb_char = strtok(NULL,"=");
-                        printf("%c\n", nxb_char[0]);
+                        nxb = atoi(nxb_char);
+                        printf("nzb = %i\n", nxb);
                 }
                 if(strstr(line,"order") != NULL)
                 {
                         char *order;
                         order = strtok(line, "=");
                         order = strtok(NULL,"=");
-                        printf("%c\n", order[0]);
+                        order = atoi(order);
+                        printf("order = %i\n", order);
                 }
         }
 
