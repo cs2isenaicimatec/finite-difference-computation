@@ -103,10 +103,10 @@ void read_input(char *file)
                 }
                 if(strstr(line,"order") != NULL)
                 {
-                        char *order;
-                        order = strtok(line, "=");
-                        order = strtok(NULL,"=");
-                        order = atoi(order);
+                        char *order_char;
+                        order_char = strtok(line, "=");
+                        order_char = strtok(NULL,"=");
+                        order = atoi(order_char);
                         printf("order = %i\n", order);
                 }
         }
