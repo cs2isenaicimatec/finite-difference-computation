@@ -50,7 +50,7 @@ void read_input(char *file)
                         char *nz_char;
                         nz_char = strtok(line, "=");
                         nz_char = strtok(NULL,"=");
-                        printf("%s"nz_char);
+                        printf("%s", nz_char);
                 }
         }
 
