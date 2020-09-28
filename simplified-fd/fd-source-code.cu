@@ -47,6 +47,22 @@ void read_input(char *file)
                         finput = fopen(path_file, "rb");
                         printf("Local do arquivo: %s", path_file);
                 }
+                if(strstr(line,"nzb") != NULL)
+                {
+                        char *nzb_char;
+                        nzb_char = strtok(line, "=");
+                        nzb_char = strtok(NULL,"=");
+                        nzb = atoi(nzb_char);
+                        printf("nzb = %i\n", nzb);
+                }
+                if(strstr(line,"nxb") != NULL)
+                {
+                        char *nxb_char;
+                        nxb_char = strtok(line, "=");
+                        nxb_char = strtok(NULL,"=");
+                        nxb = atoi(nxb_char);
+                        printf("nzb = %i\n", nxb);
+                }
                 if(strstr(line,"nz") != NULL)
                 {
                         char *nz_char;
@@ -84,22 +100,6 @@ void read_input(char *file)
                         dx_char = strtok(NULL,"=");
                         dx = (float)atoi(dx_char);
                         printf("dx = %f\n", dx);
-                }
-                if(strstr(line,"nzb") != NULL)
-                {
-                        char *nzb_char;
-                        nzb_char = strtok(line, "=");
-                        nzb_char = strtok(NULL,"=");
-                        nzb = atoi(nzb_char);
-                        printf("nzb = %i\n", nzb);
-                }
-                if(strstr(line,"nxb") != NULL)
-                {
-                        char *nxb_char;
-                        nxb_char = strtok(line, "=");
-                        nxb_char = strtok(NULL,"=");
-                        nxb = atoi(nxb_char);
-                        printf("nzb = %i\n", nxb);
                 }
                 if(strstr(line,"order") != NULL)
                 {
