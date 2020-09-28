@@ -36,7 +36,7 @@ void read_input(char *file)
         ssize_t read;
         if (fp == NULL)
                 exit(EXIT_FAILURE);
-
+        printf("Lendo arquivo de entrada.\n\n");
         while ((read = getline(&line, &len, fp)) != -1) {
                 if(strstr(line,"tmpdir") != NULL)
                 {
@@ -52,7 +52,7 @@ void read_input(char *file)
                         if (strlen(nz_char) <= 2)
                         {
                                 nz_char = strtok(NULL,"=");
-                                printf("%c", nz_char[0]);
+                                printf("%c\n", nz_char[0]);
                         }
                 }
                 if(strstr(line,"nx") != NULL)
@@ -62,7 +62,7 @@ void read_input(char *file)
                         if (strlen(nx_char) <= 2)
                         {
                                 nx_char = strtok(NULL,"=");
-                                printf("%c", nx_char[0]);
+                                printf("%c\n", nx_char[0]);
                         }
                 }
                 if(strstr(line,"dz") != NULL)
@@ -70,35 +70,35 @@ void read_input(char *file)
                         char *dz_char;
                         dz_char = strtok(line, "=");
                         dz_char = strtok(NULL,"=");
-                        printf("%c", dz_char[0]);
+                        printf("%c\n", dz_char[0]);
                 }
                 if(strstr(line,"dx") != NULL)
                 {
                         char *dx_char;
                         dx_char = strtok(line, "=");
                         dx_char = strtok(NULL,"=");
-                        printf("%c", dx_char[0]);
+                        printf("%c\n", dx_char[0]);
                 }
                 if(strstr(line,"nzb") != NULL)
                 {
                         char *nzb_char;
                         nzb_char = strtok(line, "=");
                         nzb_char = strtok(NULL,"=");
-                        printf("%c", nzb_char[0]);
+                        printf("%c\n", nzb_char[0]);
                 }
                 if(strstr(line,"nxb") != NULL)
                 {
                         char *nxb_char;
                         nxb_char = strtok(line, "=");
                         nxb_char = strtok(NULL,"=");
-                        printf("%c", nxb_char[0]);
+                        printf("%c\n", nxb_char[0]);
                 }
                 if(strstr(line,"order") != NULL)
                 {
                         char *order;
                         order = strtok(line, "=");
                         order = strtok(NULL,"=");
-                        printf("%c", order[0]);
+                        printf("%c\n", order[0]);
                 }
         }
 
