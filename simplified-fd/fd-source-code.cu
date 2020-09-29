@@ -261,7 +261,7 @@ void fd_init(int order, int nx, int nz, float dx, float dz)
 int main (int argc, char **argv)
 {
         read_input(argv[1]);
-        
+
         printf("Local do arquivo: %s\n", path_file);
         printf("nzb = %i\n", nzb);
         printf("nzb = %i\n", nxb);
@@ -296,13 +296,13 @@ int main (int argc, char **argv)
         cudaMemcpy(d_coefs_x, coefs_x, coefsBufferLength, cudaMemcpyHostToDevice);
         cudaMemcpy(d_coefs_z, coefs_z, coefsBufferLength, cudaMemcpyHostToDevice);
 
-        kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
+        kernel_lap<<<dimGrid, dimBlock>>>(order,nxe,nze,d_p,d_laplace,d_coefs_x,d_coefs_z);
 
         float *output_data;
         output_data = (float*)malloc(mtxBufferLength);
-        
+
         cudaMemcpy(output_data, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
-        
+
         // salvando a saída
         FILE *foutput;
         printf("Salvando saída...\n");
