@@ -41,10 +41,14 @@ void read_input(char *file)
         while (getline(&line, &len, fp) != -1) {
                 if(strstr(line,"tmpdir") != NULL)
                 {
-                        char *file;
-                        file = strtok(line, "=");
-                        file = strtok(NULL,"=");
-                        path_file = file;
+                        char *tok;
+                        tok = strtok(line, "=");
+                        tok = strtok(NULL,"=");
+                        int i = 0;
+                        for (;i < strlen(tok))
+                        {
+                                printf("%c\n",tok[i]);
+                        }
                 }
                 if(strstr(line,"nzb") != NULL)
                 {
@@ -263,7 +267,7 @@ int main (int argc, char **argv)
 {
         read_input(argv[1]);
         
-        printf("Local do arquivo: %s", path_file);
+        printf("Local do arquivo: %s\n", path_file);
         printf("nzb = %i\n", nzb);
         printf("nzb = %i\n", nxb);
         printf("nz = %i\n", nz);
@@ -272,48 +276,48 @@ int main (int argc, char **argv)
         printf("dx = %f\n", dx);
         printf("order = %i\n", order);
 
-        nxe = nx + 2 * nxb;
-        nze = nz + 2 * nzb;
-        // inicialização
-        printf("Iniciando fd.\n");
-        fd_init(order,nxe,nze,dx,dz);
+        // nxe = nx + 2 * nxb;
+        // nze = nz + 2 * nzb;
+        // // inicialização
+        // printf("Iniciando fd.\n");
+        // fd_init(order,nxe,nze,dx,dz);
 
-        dim3 dimGrid(gridx, gridz);
-        dim3 dimBlock(sizeblock, sizeblock);
-        printf("Alocando input.\n");
-        FILE *finput;
-        finput = fopen(path_file, "rb");
-        float *input_data;
-        input_data = (float*)malloc(mtxBufferLength);
-        printf("lendo arquivo...\n");
-        fread(input_data, sizeof(float), nze*nxe, finput);
-        fclose(finput);
+        // dim3 dimGrid(gridx, gridz);
+        // dim3 dimBlock(sizeblock, sizeblock);
+        // printf("Alocando input.\n");
+        // FILE *finput;
+        // finput = fopen(path_file, "rb");
+        // float *input_data;
+        // input_data = (float*)malloc(mtxBufferLength);
+        // printf("lendo arquivo...\n");
+        // fread(input_data, sizeof(float), nze*nxe, finput);
+        // fclose(finput);
 
-        // utilização do kernel
-        cudaMemcpy(d_p, input_data, mtxBufferLength, cudaMemcpyHostToDevice);
-        cudaMemcpy(d_coefs_x, coefs_x, coefsBufferLength, cudaMemcpyHostToDevice);
-        cudaMemcpy(d_coefs_z, coefs_z, coefsBufferLength, cudaMemcpyHostToDevice);
+        // // utilização do kernel
+        // cudaMemcpy(d_p, input_data, mtxBufferLength, cudaMemcpyHostToDevice);
+        // cudaMemcpy(d_coefs_x, coefs_x, coefsBufferLength, cudaMemcpyHostToDevice);
+        // cudaMemcpy(d_coefs_z, coefs_z, coefsBufferLength, cudaMemcpyHostToDevice);
 
-        kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
+        // kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
 
-        float *output_data;
-        output_data = (float*)malloc(mtxBufferLength);
+        // float *output_data;
+        // output_data = (float*)malloc(mtxBufferLength);
         
-        cudaMemcpy(output_data, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
+        // cudaMemcpy(output_data, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
         
-        // salvando a saída
-        FILE *foutput;
-        printf("salvando saída...\n");
-        foutput = fopen("output_cuda.bin", "wb");
-        fwrite(output_data, sizeof(float), nze*nxe, foutput);
-        fclose(foutput);
+        // // salvando a saída
+        // FILE *foutput;
+        // printf("salvando saída...\n");
+        // foutput = fopen("output_cuda.bin", "wb");
+        // fwrite(output_data, sizeof(float), nze*nxe, foutput);
+        // fclose(foutput);
 
-        // free memory device
-        free(input_data);
-        free(output_data);
-        cudaFree(d_p);
-        cudaFree(d_laplace);
-        cudaFree(d_coefs_x);
-        cudaFree(d_coefs_z);
+        // // free memory device
+        // free(input_data);
+        // free(output_data);
+        // cudaFree(d_p);
+        // cudaFree(d_laplace);
+        // cudaFree(d_coefs_x);
+        // cudaFree(d_coefs_z);
         return 0;
 }
