@@ -41,9 +41,10 @@ void read_input(char *file)
         while (getline(&line, &len, fp) != -1) {
                 if(strstr(line,"tmpdir") != NULL)
                 {
-                        path_file = strtok(line, "=");
-                        path_file = strtok(NULL,"=");
-                        printf("Local do arquivo: %s", path_file);
+                        char *file;
+                        file = strtok(line, "=");
+                        file = strtok(NULL,"=");
+                        strcpy(path_file,file);
                 }
                 if(strstr(line,"nzb") != NULL)
                 {
@@ -51,7 +52,6 @@ void read_input(char *file)
                         nzb_char = strtok(line, "=");
                         nzb_char = strtok(NULL,"=");
                         nzb = atoi(nzb_char);
-                        printf("nzb = %i\n", nzb);
                 }
                 if(strstr(line,"nxb") != NULL)
                 {
@@ -59,7 +59,6 @@ void read_input(char *file)
                         nxb_char = strtok(line, "=");
                         nxb_char = strtok(NULL,"=");
                         nxb = atoi(nxb_char);
-                        printf("nzb = %i\n", nxb);
                 }
                 if(strstr(line,"nz") != NULL)
                 {
@@ -69,7 +68,6 @@ void read_input(char *file)
                         {
                                 nz_char = strtok(NULL,"=");
                                 nz = atoi(nz_char);
-                                printf("nz = %i\n", nz);
                         }
                 }
                 if(strstr(line,"nx") != NULL)
@@ -80,7 +78,6 @@ void read_input(char *file)
                         {
                                 nx_char = strtok(NULL,"=");
                                 nx = atoi(nx_char);
-                                printf("nx = %i\n", nx);
                         }
                 }
                 if(strstr(line,"dz") != NULL)
@@ -89,7 +86,6 @@ void read_input(char *file)
                         dz_char = strtok(line, "=");
                         dz_char = strtok(NULL,"=");
                         dz = (float)atoi(dz_char);
-                        printf("dz = %f\n", dz);
                 }
                 if(strstr(line,"dx") != NULL)
                 {
@@ -97,7 +93,6 @@ void read_input(char *file)
                         dx_char = strtok(line, "=");
                         dx_char = strtok(NULL,"=");
                         dx = (float)atoi(dx_char);
-                        printf("dx = %f\n", dx);
                 }
                 if(strstr(line,"order") != NULL)
                 {
@@ -105,7 +100,6 @@ void read_input(char *file)
                         order_char = strtok(line, "=");
                         order_char = strtok(NULL,"=");
                         order = atoi(order_char);
-                        printf("order = %i\n", order);
                 }
         }
         
@@ -269,7 +263,15 @@ int main (int argc, char **argv)
 {
         read_input(argv[1]);
         
-        printf("Calculando nxe e nze\n");
+        printf("Local do arquivo: %s", path_file);
+        printf("nzb = %i\n", nzb);
+        printf("nzb = %i\n", nxb);
+        printf("nz = %i\n", nz);
+        printf("nx = %i\n", nx);
+        printf("dz = %f\n", dz);
+        printf("dx = %f\n", dx);
+        printf("order = %i\n", order);
+
         nxe = nx + 2 * nxb;
         nze = nz + 2 * nzb;
         // inicialização
@@ -280,8 +282,7 @@ int main (int argc, char **argv)
         dim3 dimBlock(sizeblock, sizeblock);
         printf("Alocando input.\n");
         FILE *finput;
-        printf("%s\n", path_file);
-        finput = fopen("./input.bin", "rb");
+        finput = fopen(path_file, "rb");
         float *input_data;
         input_data = (float*)malloc(mtxBufferLength);
         printf("lendo arquivo...\n");
