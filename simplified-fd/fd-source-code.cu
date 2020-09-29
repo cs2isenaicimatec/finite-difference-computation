@@ -13,7 +13,7 @@ void read_input(char *file);
 #define sizeblock 32
 #define PI (3.141592653589793)
 
-char *path_file = NULL;
+char *path_file;
 
 float *d_p;
 float *d_laplace, *d_coefs_x, *d_coefs_z;
@@ -44,7 +44,7 @@ void read_input(char *file)
                         char *file;
                         file = strtok(line, "=");
                         file = strtok(NULL,"=");
-                        strcpy(path_file,file);
+                        path_file = file;
                 }
                 if(strstr(line,"nzb") != NULL)
                 {
