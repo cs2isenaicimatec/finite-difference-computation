@@ -13,7 +13,7 @@ void read_input(char *file);
 #define sizeblock 32
 #define PI (3.141592653589793)
 
-char *path_file;
+char *path_file = NULL;
 
 float *d_p;
 float *d_laplace, *d_coefs_x, *d_coefs_z;
@@ -35,11 +35,10 @@ void read_input(char *file)
         fp = fopen(file, "r");
         char *line = NULL;
         size_t len = 0;
-        ssize_t read;
         if (fp == NULL)
                 exit(EXIT_FAILURE);
         printf("Lendo arquivo de entrada.\n\n");
-        while ((read = getline(&line, &len, fp)) != -1) {
+        while (getline(&line, &len, fp) != -1) {
                 if(strstr(line,"tmpdir") != NULL)
                 {
                         path_file = strtok(line, "=");
@@ -280,7 +279,8 @@ int main (int argc, char **argv)
         dim3 dimBlock(sizeblock, sizeblock);
         printf("Alocando input.\n");
         FILE *finput;
-        finput = fopen(path_file, "rb");
+        printf("%s\n", path_file);
+        finput = fopen("./input.bin", "rb");
         float *input_data;
         input_data = (float*)malloc(mtxBufferLength);
         printf("lendo arquivo...\n");
