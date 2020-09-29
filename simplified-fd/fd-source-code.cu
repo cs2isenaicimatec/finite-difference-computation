@@ -109,11 +109,7 @@ void read_input(char *file)
                         printf("order = %i\n", order);
                 }
         }
-<<<<<<< HEAD
 	printf("Fim da leitura do arquivo de entrada.\n\n");
-=======
-        
->>>>>>> 2a4c0d0c4dea6c7604d9085b7b94831eb449e1dc
 }
 
 __global__ void kernel_lap(int order, int nx, int nz, float * __restrict__ p, float * __restrict__ lap, float * __restrict__ coefsx, float * __restrict__ coefsz)
