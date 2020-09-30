@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 
 #define Null -99999
@@ -11,20 +12,24 @@ void stdev(float mean, float *dif, int len);
 void main ()
 {
     int mtxBufferLength = (315 + 2 * 50)*(195 + 2 * 50)*sizeof(float);
-    float output_cuda[mtxBufferLength], output_dpc[mtxBufferLength];
-
+    float *output_cuda;
+    float *output_dpc;
+    output_cuda = (float*)malloc(mtxBufferLength);
+    output_dpc = (float*)malloc(mtxBufferLength);
     FILE *foutput_cuda, *foutput_dpc;
     foutput_cuda = fopen("output_cuda.bin", "rb");
-    foutput_dpc = fopen("output_teste.bin", "rb");
+    foutput_dpc = fopen("output_original.bin", "rb");
 
     printf("Lendo arquivos...\n");
-    fread(output_cuda, sizeof(output_cuda), 1, foutput_cuda);
-    fread(output_dpc, sizeof(output_dpc), 1, foutput_dpc);
+    fread(output_cuda, sizeof(float), (315 + 2 * 50)*(195 + 2 * 50), foutput_cuda);
+    fread(output_dpc, sizeof(float), (315 + 2 * 50)*(195 + 2 * 50), foutput_dpc);
     fclose(foutput_cuda);
     fclose(foutput_dpc);
 
     printf("Comparando...\n");
-    compare(output_cuda, output_dpc, mtxBufferLength);
+    compare(output_cuda, output_dpc, mtxBufferLength/sizeof(float));
+    free(output_cuda);
+    free(output_dpc);
 }
 
 void compare(float *input1, float *input2, int len)
@@ -34,7 +39,7 @@ void compare(float *input1, float *input2, int len)
     int count = 0, length = 0;
     for (i = 0; i < len; i++)
     {
-        if (fabsf(input1[i]) < 1000 && fabsf(input2[i]) < 1000)
+        if (fabsf(input1[i]) < 10 && fabsf(input2[i]) < 10)
         {
             dif[i] = fabsf(input1[i] - input2[i]);
             sum += dif[i];
