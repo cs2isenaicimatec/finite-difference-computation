@@ -464,14 +464,33 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 	if(propag == 5){
 		float *input, *output;
 		input = (float*)malloc(mtxBufferLength);
+		if(!input)
+			printf("Memory allocation error!\n");
+		else 
+			printf("Memory allocation successful.\n");
 		output = (float*)malloc(mtxBufferLength);
 		FILE *finput, *foutput;
-		finput = fopen("../../simplified-fd/input.bin", "wb");
-		foutput = fopen("../../simplified-fd/output_original.bin", "wb");
+		if((finput = fopen("../../simplified-fd/input.bin", "wb")) == NULL)
+			printf("Unable to open input!\n");
+		else
+			printf("Opened input successfully for writing.\n");
+		
+		if((foutput = fopen("../../simplified-fd/output_original.bin", "wb")) == NULL)
+			printf("Unable to open output_original!\n");
+		else
+			printf("Opened output_original successfully for writing.\n");
 		cudaMemcpy(input, d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
 		cudaMemcpy(output, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
-		fwrite(input,sizeof(float),nx*nz,finput);
-		fwrite(output,sizeof(float),nx*nz,foutput);
+		
+		if( fwrite(input, sizeof(float), nz*nx, finput) != nz*nx)
+			printf("input Write error!\n");
+		else 
+			printf("input Write was successful.\n");
+		
+		if( fwrite(output,sizeof(float), nz*nx,foutput) != nz*nx)
+			printf("outpu_original write error!\n");
+		else 
+			printf("outpu_original write  was successful.\n");
 		free(input);
 		free(output);
 		fclose(finput);

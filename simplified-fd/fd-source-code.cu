@@ -279,16 +279,26 @@ int main (int argc, char **argv)
         dim3 dimGrid(gridx, gridz);
         dim3 dimBlock(sizeblock, sizeblock);
         FILE *finput;
-        finput = fopen(path_file, "rb");
-        if (ferror(finput))
-        {
-                printf("Erro ao abrir o arquivo.\n");
-                return 1;
-        }
         float *input_data;
+
+        if((finput = fopen(path_file, "rb")) == NULL)
+                printf("Unable to open file!\n");
+        else
+                printf("Opened input successfully for read.\n");
+        
         input_data = (float*)malloc(mtxBufferLength);
-        printf("Lendo arquivo...\n");
-        fread(input_data, sizeof(float), nze*nxe, finput);
+        if(!input_data)
+                printf("input Memory allocation error!\n");
+        else 
+                printf("input Memory allocation successful.\n");
+
+        memset(input_data, 0, mtxBufferLength);
+        
+        if( fread(input_data, sizeof(float), nze*nxe, finput) != nze*nxe)
+                printf("input Read error!\n");
+        
+        else 
+                printf("input Read was successful.\n");
         fclose(finput);
 
         // utilização do kernel
@@ -300,14 +310,25 @@ int main (int argc, char **argv)
 
         float *output_data;
         output_data = (float*)malloc(mtxBufferLength);
-
+        if(!output_data)
+                printf("output Memory allocation error!\n");
+        else 
+                printf("output Memory allocation successful.\n");
+        memset(output_data, 0, mtxBufferLength);
         cudaMemcpy(output_data, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
 
         // salvando a saída
         FILE *foutput;
-        printf("Salvando saída...\n");
-        foutput = fopen("output_cuda.bin", "wb");
-        fwrite(output_data, sizeof(float), nze*nxe, foutput);
+        if((foutput = fopen("output_cuda.bin", "wb")) == NULL)
+                printf("Unable to open file!\n");
+        else
+                printf("Opened output successfully for write.\n");
+        
+        if( fwrite(output_data, sizeof(float), nze*nxe, foutput) != nze*nxe)
+                printf("output Write error!\n");
+        
+        else 
+                printf("output Write was successful.\n");
         fclose(foutput);
 
         // free memory device
