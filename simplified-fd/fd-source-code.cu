@@ -33,17 +33,17 @@ void read_input(char *file)
 {
         FILE *fp;
         fp = fopen(file, "r");
-        char *line = NULL;
-        size_t len = 0;
+				char line[256];
+        // size_t len = 0;
         if (fp == NULL)
                 exit(EXIT_FAILURE);
-        while (getline(&line, &len, fp) != -1) {
+        while (fscanf(fp, "%s", line) != EOF) {
                 if(strstr(line,"tmpdir") != NULL)
                 {
                         char *tok;
                         tok = strtok(line, "=");
                         tok = strtok(NULL,"=");
-                        tok[strlen(tok) - 2] = '\0';
+                        // tok[strlen(tok) - 2] = '\0';
                         file_path = strdup(tok);
                 }
                 if(strstr(line,"nzb") != NULL)
@@ -102,7 +102,7 @@ void read_input(char *file)
                         order = atoi(order_char);
                 }
         }
-				free(line);
+				// free(line);
 }
 
 __global__ void kernel_lap(int order, int nx, int nz, float * __restrict__ p, float * __restrict__ lap, float * __restrict__ coefsx, float * __restrict__ coefsz)
