@@ -463,12 +463,12 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 	gettimeofday(&stCR, NULL);
 	if(propag == 5){
 		float *input, *output;
-		input = (float*)malloc(mtxBufferLength);
+		input = (float*)malloc(mtxBufferLength*sizeof(float));
 		if(!input)
 			printf("Memory allocation error!\n");
 		else 
 			printf("Memory allocation successful.\n");
-		output = (float*)malloc(mtxBufferLength);
+		output = (float*)malloc(mtxBufferLength*sizeof(float));
 		FILE *finput, *foutput;
 		if((finput = fopen("../../simplified-fd/input.bin", "wb")) == NULL)
 			printf("Unable to open input!\n");
