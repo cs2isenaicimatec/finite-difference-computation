@@ -361,7 +361,7 @@ int main (int argc, char **argv)
 
         // Writing output
         FILE *foutput;
-        if((foutput = fopen("output_cuda.bin", "wb")) == NULL)
+        if((foutput = fopen("output_teste.bin", "wb")) == NULL)
                 printf("Unable to open file!\n");
         else
                 printf("Output successfully opened for writing.\n");
