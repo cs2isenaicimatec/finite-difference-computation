@@ -1,15 +1,20 @@
 #include <CL/sycl.hpp>
 #include <dpct/dpct.hpp>
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 void fd_init(int order, int nx, int nz, float dx, float dz);
 void fd_init_cuda(int order, int nxe, int nze);
 float *calc_coefs(int order);
 static void makeo2 (float *coef,int order);
+void read_input(char *file);
 
 #define sizeblock 16
 #define PI (3.141592653589793)
+
+char *file_path;
 
 float *d_p;
 float *d_laplace, *d_coefs_x, *d_coefs_z;
@@ -17,11 +22,89 @@ float *d_laplace, *d_coefs_x, *d_coefs_z;
 size_t mtxBufferLength, coefsBufferLength;
 
 int gridx, gridz;
+int nz, nx, nxb, nzb, nxe, nze, order;
+float dz, dx;
 
 static float dx2inv, dz2inv;
 static float *coefs = NULL;
 static float *coefs_z = NULL;
 static float *coefs_x = NULL;
+
+void read_input(char *file)
+{
+        FILE *fp;
+        fp = fopen(file, "r");
+        char line[256];
+        // size_t len = 0;
+        if (fp == NULL)
+                exit(EXIT_FAILURE);
+        while (fscanf(fp, "%s", line) != EOF) {
+                if(strstr(line,"tmpdir") != NULL)
+                {
+                        char *tok;
+                        tok = strtok(line, "=");
+                        tok = strtok(NULL,"=");
+                        // tok[strlen(tok) - 2] = '\0';
+                        file_path = strdup(tok);
+                }
+                if(strstr(line,"nzb") != NULL)
+                {
+                        char *nzb_char;
+                        nzb_char = strtok(line, "=");
+                        nzb_char = strtok(NULL,"=");
+                        nzb = atoi(nzb_char);
+                }
+                if(strstr(line,"nxb") != NULL)
+                {
+                        char *nxb_char;
+                        nxb_char = strtok(line, "=");
+                        nxb_char = strtok(NULL,"=");
+                        nxb = atoi(nxb_char);
+                }
+                if(strstr(line,"nz") != NULL)
+                {
+                        char *nz_char;
+                        nz_char = strtok(line, "=");
+                        if (strlen(nz_char) <= 2)
+                        {
+                                nz_char = strtok(NULL,"=");
+                                nz = atoi(nz_char);
+                        }
+                }
+                if(strstr(line,"nx") != NULL)
+                {
+                        char *nx_char;
+                        nx_char = strtok(line, "=");
+                        if (strlen(nx_char) <= 2)
+                        {
+                                nx_char = strtok(NULL,"=");
+                                nx = atoi(nx_char);
+                        }
+                }
+                if(strstr(line,"dz") != NULL)
+                {
+                        char *dz_char;
+                        dz_char = strtok(line, "=");
+                        dz_char = strtok(NULL,"=");
+                        dz = atof(dz_char);
+                }
+                if(strstr(line,"dx") != NULL)
+                {
+                        char *dx_char;
+                        dx_char = strtok(line, "=");
+                        dx_char = strtok(NULL,"=");
+                        dx = atof(dx_char);
+                }
+                if(strstr(line,"order") != NULL)
+                {
+                        char *order_char;
+                        order_char = strtok(line, "=");
+                        order_char = strtok(NULL,"=");
+                        order = atoi(order_char);
+                }
+        }
+				// free(line);
+}
 
 void kernel_lap(int order, int nx, int nz, float * __restrict__ p, float * __restrict__ lap, float * __restrict__ coefsx, float * __restrict__ coefsz,
                 sycl::nd_item<3> item_ct1)
@@ -102,7 +185,8 @@ float *calc_coefs(int order)
         return coef;
 }
 
-static void makeo2 (float *coef,int order){
+static void makeo2 (float *coef,int order)
+{
         float h_beta, alpha1=0.0;
         float alpha2=0.0;
         float  central_term=0.0;
@@ -188,31 +272,53 @@ int main (int argc, char **argv)
 {
         dpct::device_ext &dev_ct1 = dpct::get_current_device();
         sycl::queue &q_ct1 = dev_ct1.default_queue();
-        // constantes
-        int nz = 195, nx = 315, nxb = 50, nzb = 50, nxe, nze, order = 8;
-        float dz = 10.000000, dx = 10.000000;
+        read_input(argv[1]);
+
+        printf("Local do arquivo: %s\n", file_path);
+        printf("nzb = %i\n", nzb);
+        printf("nzb = %i\n", nxb);
+        printf("nz = %i\n", nz);
+        printf("nx = %i\n", nx);
+        printf("dz = %f\n", dz);
+        printf("dx = %f\n", dx);
+        printf("order = %i\n", order);
 
         nxe = nx + 2 * nxb;
         nze = nz + 2 * nzb;
-        // inicialização
+        // initialization
         fd_init(order,nxe,nze,dx,dz);
 
         sycl::range<3> dimGrid(gridx, gridz, 1);
         sycl::range<3> dimBlock(sizeblock, sizeblock, 1);
-
         FILE *finput;
-        // leitura do input
-        finput = fopen("input.bin", "rb");
-
         float *input_data;
-        input_data = (float*)malloc(mtxBufferLength);
-				printf("lendo arquivo...\n");
-        fread(input_data, sizeof(input_data), 1, finput);
+
+        if((finput = fopen(file_path, "rb")) == NULL)
+                printf("Unable to open file!\n");
+        else
+                printf("Input successfully opened for reading.\n");
+
+        input_data = (float*)malloc(mtxBufferLength*sizeof(float));
+        if(!input_data)
+                printf("Input memory allocation error!\n");
+        else
+                printf("Input memory allocation was successful.\n");
+
+        memset(input_data, 0, mtxBufferLength);
+
+        if( fread(input_data, sizeof(float), nze*nxe, finput) != nze*nxe)
+                printf("Input reading error!\n");
+
+        else
+                printf("Input reading was successful.\n");
         fclose(finput);
-        // utilização do kernel
-				q_ct1.memcpy(d_coefs_x, coefs_x, coefsBufferLength).wait();
+
+        // data copy
         q_ct1.memcpy(d_p, input_data, mtxBufferLength).wait();
-				q_ct1.memcpy(d_coefs_z, coefs_z, coefsBufferLength).wait();
+        q_ct1.memcpy(d_coefs_x, coefs_x, coefsBufferLength).wait();
+        q_ct1.memcpy(d_coefs_z, coefs_z, coefsBufferLength).wait();
+
+                                // kernel utilization
         /*
         DPCT1049:0: The workgroup size passed to the SYCL kernel may
          * exceed the limit. To get the device limit, query
@@ -222,6 +328,9 @@ int main (int argc, char **argv)
         q_ct1.submit([&](sycl::handler &cgh) {
                 auto dpct_global_range = dimGrid * dimBlock;
 
+                auto order_ct0 = order;
+                auto nxe_ct1 = nxe;
+                auto nze_ct2 = nze;
                 auto d_p_ct3 = d_p;
                 auto d_laplace_ct4 = d_laplace;
                 auto d_coefs_x_ct5 = d_coefs_x;
@@ -235,24 +344,37 @@ int main (int argc, char **argv)
                                                      dimBlock.get(1),
                                                      dimBlock.get(0))),
                     [=](sycl::nd_item<3> item_ct1) {
-                            kernel_lap(order, nx, nz, d_p_ct3, d_laplace_ct4,
-                                       d_coefs_x_ct5, d_coefs_z_ct6, item_ct1);
+                            kernel_lap(order_ct0, nxe_ct1, nze_ct2, d_p_ct3,
+                                       d_laplace_ct4, d_coefs_x_ct5,
+                                       d_coefs_z_ct6, item_ct1);
                     });
         });
 
         float *output_data;
-        output_data = (float*)malloc(mtxBufferLength);
-
+        output_data = (float*)malloc(mtxBufferLength*sizeof(float));
+        if(!output_data)
+                printf("Output memory allocation error!\n");
+        else
+                printf("Output memory allocation was successful.\n");
+        memset(output_data, 0, mtxBufferLength);
         q_ct1.memcpy(output_data, d_laplace, mtxBufferLength).wait();
 
-        // salvando a saída
+        // Writing output
         FILE *foutput;
-        printf("salvando saída...\n");
-        foutput = fopen("output_teste.bin", "wb");
-        fwrite(output_data, sizeof(output_data), 1, foutput);
+        if((foutput = fopen("output_teste.bin", "wb")) == NULL)
+                printf("Unable to open file!\n");
+        else
+                printf("Output successfully opened for writing.\n");
+
+        if( fwrite(output_data, sizeof(float), nze*nxe, foutput) != nze*nxe)
+                printf("Output writing error!\n");
+
+        else
+                printf("Output writing was successful.\n");
         fclose(foutput);
 
         // free memory device
+				free(file_path);
         free(input_data);
         free(output_data);
         sycl::free(d_p, q_ct1);

@@ -13,7 +13,7 @@ void read_input(char *file);
 #define sizeblock 32
 #define PI (3.141592653589793)
 
-char *path_file;
+char *file_path;
 
 float *d_p;
 float *d_laplace, *d_coefs_x, *d_coefs_z;
@@ -33,22 +33,18 @@ void read_input(char *file)
 {
         FILE *fp;
         fp = fopen(file, "r");
-        char *line = NULL;
-        size_t len = 0;
+				char line[256];
+        // size_t len = 0;
         if (fp == NULL)
                 exit(EXIT_FAILURE);
-        while (getline(&line, &len, fp) != -1) {
+        while (fscanf(fp, "%s", line) != EOF) {
                 if(strstr(line,"tmpdir") != NULL)
                 {
                         char *tok;
                         tok = strtok(line, "=");
                         tok = strtok(NULL,"=");
-                        for (int i = 0; i < strlen(tok); i++)
-                        {
-                                printf("%c\n", tok[i]);
-                        }
-                        tok[strlen(tok) - 1] = '\0';
-                        path_file = strdup(tok);
+                        // tok[strlen(tok) - 2] = '\0';
+                        file_path = strdup(tok);
                 }
                 if(strstr(line,"nzb") != NULL)
                 {
@@ -89,14 +85,14 @@ void read_input(char *file)
                         char *dz_char;
                         dz_char = strtok(line, "=");
                         dz_char = strtok(NULL,"=");
-                        dz = (float)atoi(dz_char);
+                        dz = atof(dz_char);
                 }
                 if(strstr(line,"dx") != NULL)
                 {
                         char *dx_char;
                         dx_char = strtok(line, "=");
                         dx_char = strtok(NULL,"=");
-                        dx = (float)atoi(dx_char);
+                        dx = atof(dx_char);
                 }
                 if(strstr(line,"order") != NULL)
                 {
@@ -106,6 +102,7 @@ void read_input(char *file)
                         order = atoi(order_char);
                 }
         }
+				// free(line);
 }
 
 __global__ void kernel_lap(int order, int nx, int nz, float * __restrict__ p, float * __restrict__ lap, float * __restrict__ coefsx, float * __restrict__ coefsz)
@@ -266,7 +263,7 @@ int main (int argc, char **argv)
 {
         read_input(argv[1]);
 
-        printf("Local do arquivo: %s\n", path_file);
+        printf("Local do arquivo: %s\n", file_path);
         printf("nzb = %i\n", nzb);
         printf("nzb = %i\n", nxb);
         printf("nz = %i\n", nz);
@@ -277,7 +274,7 @@ int main (int argc, char **argv)
 
         nxe = nx + 2 * nxb;
         nze = nz + 2 * nzb;
-        // inicialização
+        // initialization
         fd_init(order,nxe,nze,dx,dz);
 
         dim3 dimGrid(gridx, gridz);
@@ -285,57 +282,59 @@ int main (int argc, char **argv)
         FILE *finput;
         float *input_data;
 
-        if((finput = fopen(path_file, "rb")) == NULL)
+        if((finput = fopen(file_path, "rb")) == NULL)
                 printf("Unable to open file!\n");
         else
-                printf("Opened input successfully for read.\n");
-        
-        input_data = (float*)malloc(mtxBufferLength);
+                printf("Input successfully opened for reading.\n");
+
+        input_data = (float*)malloc(mtxBufferLength*sizeof(float));
         if(!input_data)
-                printf("input Memory allocation error!\n");
-        else 
-                printf("input Memory allocation successful.\n");
+                printf("Input memory allocation error!\n");
+        else
+                printf("Input memory allocation was successful.\n");
 
         memset(input_data, 0, mtxBufferLength);
-        
+
         if( fread(input_data, sizeof(float), nze*nxe, finput) != nze*nxe)
-                printf("input Read error!\n");
-        
-        else 
-                printf("input Read was successful.\n");
+                printf("Input reading error!\n");
+
+        else
+                printf("Input reading was successful.\n");
         fclose(finput);
 
-        // utilização do kernel
+        // data copy
         cudaMemcpy(d_p, input_data, mtxBufferLength, cudaMemcpyHostToDevice);
         cudaMemcpy(d_coefs_x, coefs_x, coefsBufferLength, cudaMemcpyHostToDevice);
         cudaMemcpy(d_coefs_z, coefs_z, coefsBufferLength, cudaMemcpyHostToDevice);
 
+				// kernel utilization
         kernel_lap<<<dimGrid, dimBlock>>>(order,nxe,nze,d_p,d_laplace,d_coefs_x,d_coefs_z);
 
         float *output_data;
-        output_data = (float*)malloc(mtxBufferLength);
+        output_data = (float*)malloc(mtxBufferLength*sizeof(float));
         if(!output_data)
-                printf("output Memory allocation error!\n");
-        else 
-                printf("output Memory allocation successful.\n");
+                printf("Output memory allocation error!\n");
+        else
+                printf("Output memory allocation was successful.\n");
         memset(output_data, 0, mtxBufferLength);
         cudaMemcpy(output_data, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
 
-        // salvando a saída
+        // Writing output
         FILE *foutput;
         if((foutput = fopen("output_cuda.bin", "wb")) == NULL)
                 printf("Unable to open file!\n");
         else
-                printf("Opened output successfully for write.\n");
-        
+                printf("Output successfully opened for writing.\n");
+
         if( fwrite(output_data, sizeof(float), nze*nxe, foutput) != nze*nxe)
-                printf("output Write error!\n");
-        
-        else 
-                printf("output Write was successful.\n");
+                printf("Output writing error!\n");
+
+        else
+                printf("Output writing was successful.\n");
         fclose(foutput);
 
         // free memory device
+				free(file_path);
         free(input_data);
         free(output_data);
         cudaFree(d_p);
