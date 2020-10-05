@@ -33,17 +33,17 @@ void read_input(char *file)
 {
         FILE *fp;
         fp = fopen(file, "r");
-				char line[256];
-        // size_t len = 0;
+				char *line = NULL;
+        size_t len = 0;
         if (fp == NULL)
                 exit(EXIT_FAILURE);
-        while (fscanf(fp, "%s", line) != EOF) {
+        while (getline(&line, &len, fp) != -1) {
                 if(strstr(line,"tmpdir") != NULL)
                 {
                         char *tok;
                         tok = strtok(line, "=");
                         tok = strtok(NULL,"=");
-                        // tok[strlen(tok) - 2] = '\0';
+                        tok[strlen(tok) - 1] = '\0';
                         file_path = strdup(tok);
                 }
                 if(strstr(line,"nzb") != NULL)
@@ -102,7 +102,7 @@ void read_input(char *file)
                         order = atoi(order_char);
                 }
         }
-				// free(line);
+				free(line);
 }
 
 __global__ void kernel_lap(int order, int nx, int nz, float * __restrict__ p, float * __restrict__ lap, float * __restrict__ coefsx, float * __restrict__ coefsz)
@@ -287,7 +287,7 @@ int main (int argc, char **argv)
         else
                 printf("Input successfully opened for reading.\n");
 
-        input_data = (float*)malloc(mtxBufferLength*sizeof(float));
+        input_data = (float*)malloc(mtxBufferLength);
         if(!input_data)
                 printf("Input memory allocation error!\n");
         else
@@ -311,7 +311,7 @@ int main (int argc, char **argv)
         kernel_lap<<<dimGrid, dimBlock>>>(order,nxe,nze,d_p,d_laplace,d_coefs_x,d_coefs_z);
 
         float *output_data;
-        output_data = (float*)malloc(mtxBufferLength*sizeof(float));
+        output_data = (float*)malloc(mtxBufferLength);
         if(!output_data)
                 printf("Output memory allocation error!\n");
         else
