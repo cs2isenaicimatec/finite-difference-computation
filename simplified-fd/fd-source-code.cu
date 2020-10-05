@@ -43,6 +43,10 @@ void read_input(char *file)
                         char *tok;
                         tok = strtok(line, "=");
                         tok = strtok(NULL,"=");
+                        for (int i = 0; i < strlen(tok); i++)
+                        {
+                                printf("%c\n", tok[i]);
+                        }
                         tok[strlen(tok) - 1] = '\0';
                         path_file = strdup(tok);
                 }

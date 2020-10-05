@@ -22,7 +22,7 @@ void main ()
 
     FILE *foutput_cuda, *foutput_dpc;
     foutput_cuda = fopen("output_cuda.bin", "rb");
-    foutput_dpc = fopen("output_original.bin", "rb");
+    foutput_dpc = fopen("output_teste.bin", "rb");
 
     printf("Lendo arquivos...\n");
     fread(output_cuda, sizeof(float), (315 + 2 * 50)*(195 + 2 * 50), foutput_cuda);
