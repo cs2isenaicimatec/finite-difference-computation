@@ -9,6 +9,7 @@ void fd_init_cuda(int order, int nxe, int nze);
 float *calc_coefs(int order);
 static void makeo2 (float *coef,int order);
 void read_input(char *file);
+void free_memory();
 
 #define sizeblock 32
 #define PI (3.141592653589793)
@@ -33,7 +34,7 @@ void read_input(char *file)
 {
         FILE *fp;
         fp = fopen(file, "r");
-				char *line = NULL;
+        char *line = NULL;
         size_t len = 0;
         if (fp == NULL)
                 exit(EXIT_FAILURE);
@@ -102,7 +103,7 @@ void read_input(char *file)
                         order = atoi(order_char);
                 }
         }
-				free(line);
+        free(line);
 }
 
 __global__ void kernel_lap(int order, int nx, int nz, float * __restrict__ p, float * __restrict__ lap, float * __restrict__ coefsx, float * __restrict__ coefsz)
@@ -259,6 +260,19 @@ void fd_init(int order, int nx, int nz, float dx, float dz)
         return;
 }
 
+void free_memory()
+{
+        free(coefs_z);
+        free(coefs_x);
+        free(file_path);
+        free(input_data);
+        free(output_data);
+        cudaFree(d_p);
+        cudaFree(d_laplace);
+        cudaFree(d_coefs_x);
+        cudaFree(d_coefs_z);
+}
+
 int main (int argc, char **argv)
 {
         read_input(argv[1]);
@@ -307,7 +321,7 @@ int main (int argc, char **argv)
         cudaMemcpy(d_coefs_x, coefs_x, coefsBufferLength, cudaMemcpyHostToDevice);
         cudaMemcpy(d_coefs_z, coefs_z, coefsBufferLength, cudaMemcpyHostToDevice);
 
-				// kernel utilization
+        // kernel utilization
         kernel_lap<<<dimGrid, dimBlock>>>(order,nxe,nze,d_p,d_laplace,d_coefs_x,d_coefs_z);
 
         float *output_data;
@@ -334,12 +348,6 @@ int main (int argc, char **argv)
         fclose(foutput);
 
         // free memory device
-				free(file_path);
-        free(input_data);
-        free(output_data);
-        cudaFree(d_p);
-        cudaFree(d_laplace);
-        cudaFree(d_coefs_x);
-        cudaFree(d_coefs_z);
+        free_memory();
         return 0;
 }
