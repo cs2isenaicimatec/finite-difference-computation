@@ -209,10 +209,10 @@ int main (int argc, char **argv)
         finput = fopen("input.bin", "rb");
 
         float *input_data, *output_data;
-        input_data = (float*)malloc(mtxBufferLength*sizeof(float));
-				output_data = (float*)malloc(mtxBufferLength*sizeof(float));
+        input_data = (float*)malloc(mtxBufferLength);
+				output_data = (float*)malloc(mtxBufferLength);
 				printf("lendo arquivo...\n");
-        fread(input_data, sizeof(float), mtxBufferLength, finput);
+        fread(input_data, sizeof(float), nxe*nze, finput);
         fclose(finput);
         // utilização do kernel
 				/*
@@ -221,10 +221,10 @@ int main (int argc, char **argv)
 				q_ct1.memcpy(d_coefs_z, coefs_z, coefsBufferLength).wait();
 				*/
 				{
-					sycl::buffer<float, 1> buf_input(input_data, sycl::range<1>(mtxBufferLength));
-					sycl::buffer<float, 1> buf_coefsx(coefs_x, sycl::range<1>(coefsBufferLength));
-					sycl::buffer<float, 1> buf_coefsz(coefs_z, sycl::range<1>(coefsBufferLength));
-					sycl::buffer<float, 1> buf_output(output_data, sycl::range<1>(mtxBufferLength));
+					sycl::buffer<float, 1> buf_input(input_data, sycl::range<1>(nxe*nze));
+					sycl::buffer<float, 1> buf_coefsx(coefs_x, sycl::range<1>(order+1));
+					sycl::buffer<float, 1> buf_coefsz(coefs_z, sycl::range<1>(order+1));
+					sycl::buffer<float, 1> buf_output(output_data, sycl::range<1>(nxe*nze));
 					/*
 					DPCT1049:0: The workgroup size passed to the SYCL kernel may
 					* exceed the limit. To get the device limit, query
@@ -263,7 +263,7 @@ int main (int argc, char **argv)
         FILE *foutput;
         printf("salvando saída...\n");
         foutput = fopen("output_teste.bin", "wb");
-        fwrite(output_data, sizeof(float), mtxBufferLength, foutput);
+        fwrite(output_data, sizeof(float), nxe*nze, foutput);
         fclose(foutput);
 				for(int i = 1321; i < 1341; i++){
                 printf("%.15f\n", output_data[i]);
