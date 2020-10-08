@@ -15,6 +15,7 @@ void free_memory();
 #define PI (3.141592653589793)
 
 char *file_path;
+float *input_data, *output_data;
 
 float *d_p;
 float *d_laplace, *d_coefs_x, *d_coefs_z;
@@ -294,7 +295,6 @@ int main (int argc, char **argv)
         dim3 dimGrid(gridx, gridz);
         dim3 dimBlock(sizeblock, sizeblock);
         FILE *finput;
-        float *input_data;
 
         if((finput = fopen(file_path, "rb")) == NULL)
                 printf("Unable to open file!\n");
@@ -324,7 +324,6 @@ int main (int argc, char **argv)
         // kernel utilization
         kernel_lap<<<dimGrid, dimBlock>>>(order,nxe,nze,d_p,d_laplace,d_coefs_x,d_coefs_z);
 
-        float *output_data;
         output_data = (float*)malloc(mtxBufferLength);
         if(!output_data)
                 printf("Output memory allocation error!\n");
