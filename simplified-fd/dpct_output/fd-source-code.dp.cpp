@@ -10,11 +10,13 @@ void fd_init_cuda(int order, int nxe, int nze);
 float *calc_coefs(int order);
 static void makeo2 (float *coef,int order);
 void read_input(char *file);
+void free_memory();
 
 #define sizeblock 16
 #define PI (3.141592653589793)
 
 char *file_path;
+float *input_data, *output_data;
 
 float *d_p;
 float *d_laplace, *d_coefs_x, *d_coefs_z;
@@ -34,7 +36,7 @@ void read_input(char *file)
 {
         FILE *fp;
         fp = fopen(file, "r");
-				char *line = NULL;
+        char *line = NULL;
         size_t len = 0;
         if (fp == NULL)
                 exit(EXIT_FAILURE);
@@ -103,7 +105,7 @@ void read_input(char *file)
                         order = atoi(order_char);
                 }
         }
-				free(line);
+        free(line);
 }
 
 void kernel_lap(int order, int nx, int nz, float * __restrict__ p, float * __restrict__ lap, float * __restrict__ coefsx, float * __restrict__ coefsz,
@@ -268,6 +270,21 @@ void fd_init(int order, int nx, int nz, float dx, float dz)
         return;
 }
 
+void free_memory()
+{
+        dpct::device_ext &dev_ct1 = dpct::get_current_device();
+        sycl::queue &q_ct1 = dev_ct1.default_queue();
+        free(coefs_z);
+        free(coefs_x);
+        free(file_path);
+        free(input_data);
+        free(output_data);
+        sycl::free(d_p, q_ct1);
+        sycl::free(d_laplace, q_ct1);
+        sycl::free(d_coefs_x, q_ct1);
+        sycl::free(d_coefs_z, q_ct1);
+}
+
 int main (int argc, char **argv)
 {
         dpct::device_ext &dev_ct1 = dpct::get_current_device();
@@ -291,7 +308,6 @@ int main (int argc, char **argv)
         sycl::range<3> dimGrid(gridx, gridz, 1);
         sycl::range<3> dimBlock(sizeblock, sizeblock, 1);
         FILE *finput;
-        float *input_data;
 
         if((finput = fopen(file_path, "rb")) == NULL)
                 printf("Unable to open file!\n");
@@ -318,7 +334,7 @@ int main (int argc, char **argv)
         q_ct1.memcpy(d_coefs_x, coefs_x, coefsBufferLength).wait();
         q_ct1.memcpy(d_coefs_z, coefs_z, coefsBufferLength).wait();
 
-                                // kernel utilization
+        // kernel utilization
         /*
         DPCT1049:0: The workgroup size passed to the SYCL kernel may
          * exceed the limit. To get the device limit, query
@@ -350,7 +366,6 @@ int main (int argc, char **argv)
                     });
         });
 
-        float *output_data;
         output_data = (float*)malloc(mtxBufferLength);
         if(!output_data)
                 printf("Output memory allocation error!\n");
@@ -374,12 +389,6 @@ int main (int argc, char **argv)
         fclose(foutput);
 
         // free memory device
-				free(file_path);
-        free(input_data);
-        free(output_data);
-        sycl::free(d_p, q_ct1);
-        sycl::free(d_laplace, q_ct1);
-        sycl::free(d_coefs_x, q_ct1);
-        sycl::free(d_coefs_z, q_ct1);
+        free_memory();
         return 0;
 }
