@@ -1,4 +1,10 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+
+#define sizeblock 32
+#define PI (3.141592653589793)
 
 void read_input(char *file);
 void fd_init(int order, int nx, int nz, int nxb, int nzb, int nt, int ns, float fac, float dx, float dz, float dt);
@@ -13,3 +19,8 @@ void free1 (void *p);
 void free2 (void **p);
 void free1float(float *p);
 void free2float(float **p);
+float ricker (float t, float fpeak);
+void ricker_wavelet(int nt, float dt, float peak, float *s);
+void taper_init(int nxb,int nzb,float F);
+void taper_destroy();
+void extendvel_linear(int nx,int nz,int nxb,int nzb,float **vel);

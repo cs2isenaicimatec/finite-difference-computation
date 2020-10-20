@@ -448,7 +448,6 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 	 	kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
 	 	kernel_time<<<dimGrid, dimBlock>>>(nx,nz,d_p,d_pp,d_v2,d_laplace,dt2);
 	 	kernel_src<<<dimGridSingle, dimBlock>>>(nz,d_pp,sx[is],sz,srce[it]);
-	 	kernel_upb<<<dimGridUpb, dimBlock>>>(order,nx,nz,nzbin,nt,d_pp,d_upb,it,0);
 		cudaCheck();
 
      	if((it+1)%100 == 0){fprintf(stdout,"\r* it = %d / %d (%d%)",it+1,nt,(100*(it+1)/nt));fflush(stdout);}
@@ -461,42 +460,7 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 
 	// start read time
 	gettimeofday(&stCR, NULL);
-	if(propag == 5){
-		float *input, *output;
-		input = (float*)malloc(mtxBufferLength);
-		if(!input)
-			printf("Memory allocation error!\n");
-		else
-			printf("Memory allocation successful.\n");
-		output = (float*)malloc(mtxBufferLength);
-		FILE *finput, *foutput;
-		if((finput = fopen("../../simplified-fd/input.bin", "wb")) == NULL)
-			printf("Unable to open input!\n");
-		else
-			printf("Opened input successfully for writing.\n");
-
-		if((foutput = fopen("../../simplified-fd/output_original.bin", "wb")) == NULL)
-			printf("Unable to open output_original!\n");
-		else
-			printf("Opened output_original successfully for writing.\n");
-		cudaMemcpy(input, d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
-		cudaMemcpy(output, d_laplace, mtxBufferLength, cudaMemcpyDeviceToHost);
-
-		if( fwrite(input, sizeof(float), nz*nx, finput) != nz*nx)
-			printf("input Write error!\n");
-		else
-			printf("input Write was successful.\n");
-
-		if( fwrite(output,sizeof(float), nz*nx,foutput) != nz*nx)
-			printf("outpu_original write error!\n");
-		else
-			printf("outpu_original write  was successful.\n");
-		free(input);
-		free(output);
-		fclose(finput);
-		fclose(foutput);
-	}
- 	cudaMemcpy(p[0], d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
+	cudaMemcpy(p[0], d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
  	cudaMemcpy(pp[0], d_pp, mtxBufferLength, cudaMemcpyDeviceToHost);
  	cudaMemcpy(upb[0][0], d_upb, upbBufferLength, cudaMemcpyDeviceToHost);
 	// Calc avg read time
@@ -544,7 +508,6 @@ void fd_back(int order, float **p, float **pp, float **pr, float **ppr, float **
       	}else{
 		 	kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
 		 	kernel_time<<<dimGrid, dimBlock>>>(nx,nz,d_p,d_pp,d_v2,d_laplace,dt2);
-		 	kernel_upb<<<dimGridUpb, dimBlock>>>(order,nx,nz,nzbin,nt,d_pp,d_upb,it,1);
 		}
 
 		d_swap = d_pp;

@@ -1,11 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
-#include "functions.h"
-
-#define sizeblock 32
-#define PI (3.141592653589793)
+#include "../include/functions.h"
 
 /* file names */
 char *tmpdir = NULL, *vpfile = NULL, *datfile = NULL, *vel_ext_file = NULL;
@@ -29,6 +22,8 @@ int *sx;
 
 /*aux*/
 int iss = -1, rnd, vel_ext_flag=0;
+
+static float *taperx=NULL,*taperz=NULL;
 
 void read_input(char *file)
 {
@@ -398,3 +393,132 @@ void free3float(float ***p)
 	free3((void***)p);
 }
 
+float ricker (float t, float fpeak)
+/*****************************************************************************
+ricker - Compute Ricker wavelet as a function of time
+******************************************************************************
+Input:
+t		time at which to evaluate Ricker wavelet
+fpeak		peak (dominant) frequency of wavelet
+******************************************************************************
+Notes:
+The amplitude of the Ricker wavelet at a frequency of 2.5*fpeak is 
+approximately 4 percent of that at the dominant frequency fpeak.
+The Ricker wavelet effectively begins at time t = -1.0/fpeak.  Therefore,
+for practical purposes, a causal wavelet may be obtained by a time delay
+of 1.0/fpeak.
+The Ricker wavelet has the shape of the second derivative of a Gaussian.
+******************************************************************************
+Author:  Dave Hale, Colorado School of Mines, 04/29/90
+******************************************************************************/
+{
+	float x,xx;
+	
+	x = PI*fpeak*t;
+	xx = x*x;
+	/* return (-6.0+24.0*xx-8.0*xx*xx)*exp(-xx); */
+	/* return PI*fpeak*(4.0*xx*x-6.0*x)*exp(-xx); */
+	return exp(-xx)*(1.0-2.0*xx);
+}
+
+void ricker_wavelet(int nt, float dt, float peak, float *s)
+{
+	int it;
+	for(it = 0; it < nt; it++){
+		/*
+		if(it*dt > 2.0/peak){
+			s[it] = 0.0;
+		}
+		else{
+			s[it] = ricker(it*dt - 1.0/peak, peak);
+		}
+		*/
+		s[it] = ricker(it*dt - 1.0/peak, peak);
+	}
+}
+
+void extendvel_linear(int nx,int nz,int nxb,int nzb,float **vel){
+	int ix,iz;
+	float v=0,v_ave=0,l_lim = 300.,delta = 200.;
+	//fprintf(stdout,"\nRAND_MAX = %d\n",RAND_MAX); // Check max randomic number RAND_MAX
+
+	for(ix=0;ix<nx;ix++){
+		for(iz=0;iz<nzb;iz++){ 
+			/* borda superior */
+			vel[ix+nxb][iz] = vel[ix+nxb][nzb];
+			
+			/* borda inferior */
+			v = vel[ix+nxb][nzb+nz-1];
+			v_ave = v - (v - l_lim)*(iz)/(nzb-1);
+			vel[ix+nxb][nz+nzb+iz] = rand()%(int)(v + delta - (v_ave - delta) +1) + v_ave - delta;
+			
+		}
+	}
+	for(iz=0;iz<nz;iz++){
+		for(ix=0;ix<nxb;ix++){									
+			/* borda esquerda */
+			v = vel[nxb][nzb+iz];	
+			v_ave = v - (v - l_lim)*(ix)/(nxb-1);
+			vel[nxb-1-ix][nzb+iz] = rand()%(int)(v + delta - (v_ave - delta) +1) + v_ave - delta;
+			
+			/* borda direita */
+			v = vel[nxb+nx-1][nzb+iz];	
+			v_ave = v - (v - l_lim)*(ix)/(nxb-1);
+			vel[nxb+nx+ix][nzb+iz] = rand()%(int)(v + delta - (v_ave - delta) +1) + v_ave - delta;			
+		}
+	}
+
+	/* Canto superior esquerdo e direito */
+	for(iz=0;iz<nzb;iz++){
+		for(ix=0;ix<nxb;ix++){
+			vel[ix][iz] = vel[nxb][iz];
+			vel[nxb+nx+ix][iz]= vel[nxb+nx-1][iz];
+		}
+	}
+
+	/* Canto inferior esquerdo */
+	for(iz=0;iz<nzb;iz++){
+		for(ix=0;ix<=iz;ix++){
+			v = vel[nxb][nzb+nz-1];
+			v_ave = v - (v - l_lim)*(nxb-1-ix)/(nzb-1);
+			vel[ix][nz+2*nzb-1-iz] = rand()%(int)(v + delta - (v_ave - delta) +1) + v_ave - delta;
+			vel[iz][nz+2*nzb-1-ix] = rand()%(int)(v + delta - (v_ave - delta) +1) + v_ave - delta;
+		}
+	}
+
+	/* Canto inferior direito */
+	for(iz=0;iz<nzb;iz++){
+		for(ix=0;ix<=iz;ix++){
+			v = vel[nxb+nx-1][nzb+nz-1];
+			v_ave = v - (v - l_lim)*(nxb-1-ix)/(nzb-1);
+			vel[nx+2*nxb-1-ix][nz+2*nzb-1-iz] = rand()%(int)(v + delta - (v_ave - delta) +1) + v_ave - delta;
+			vel[nx+2*nxb-1-iz][nz+2*nzb-1-ix] = rand()%(int)(v + delta - (v_ave - delta) +1) + v_ave - delta;
+		}
+	}
+}
+
+void taper_init(int nxb,int nzb,float F){
+	int i;
+	float dfrac;
+	taperx = alloc1float(nxb);
+	taperz = alloc1float(nzb);
+
+	dfrac = sqrt(-log(F))/(1.*nxb);
+
+	for(i=0;i<nxb;i++){
+		taperx[i] = exp(-pow((dfrac*(nxb-i)),2));
+	}
+
+	dfrac = sqrt(-log(F))/(1.*nzb);
+
+	for(i=0;i<nzb;i++){
+		taperz[i] = exp(-pow((dfrac*(nzb-i)),2));
+	}
+	return;
+}
+
+void taper_destroy(){
+	free1float(taperx);
+	free1float(taperz);
+	return;
+}

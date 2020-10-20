@@ -319,7 +319,6 @@ void fd_back(int order, float **p, float **pp, float **pr, float **ppr, float **
 	}
 }
 
-
 int main (int argc, char **argv)
 {
 	FILE *fsource = NULL, *fvel_ext = NULL, *fd_obs = NULL, *fvp = NULL, *fsns = NULL,*fsns2 = NULL, *fsnr = NULL, *fimg = NULL, *flim = NULL, *fimg_lap = NULL;
@@ -334,7 +333,7 @@ int main (int argc, char **argv)
 	float **imloc, **img, **img_lap;
         read_input(argv[1]);
 
-        printf("## vp = %s, d_obs = %s, vel_ext_file = %s, vel_ext_flag = %d \n",vpfile,datfile,vel_ext_file,vel_ext_flag);
+	printf("## vp = %s, d_obs = %s, vel_ext_file = %s, vel_ext_flag = %d \n",vpfile,datfile,vel_ext_file,vel_ext_flag);
 	printf("## nz = %d, nx = %d, nt = %d \n",nz,nx,nt);
 	printf("## dz = %f, dx = %f, dt = %f \n",dz,dx,dt);
 	printf("## ns = %d, sz = %d, fsx = %d, ds = %d, gz = %d \n",ns,sz,fsx,ds,gz);
