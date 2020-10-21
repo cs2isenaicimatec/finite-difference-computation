@@ -447,7 +447,8 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 	 	kernel_tapper<<<dimGridTaper, dimBlock>>>(nx,nz,nxbin,nzbin,d_p,d_pp,d_taperx,d_taperz);
 	 	kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
 	 	kernel_time<<<dimGrid, dimBlock>>>(nx,nz,d_p,d_pp,d_v2,d_laplace,dt2);
-	 	kernel_src<<<dimGridSingle, dimBlock>>>(nz,d_pp,sx[is],sz,srce[it]);
+		kernel_src<<<dimGridSingle, dimBlock>>>(nz,d_pp,sx[is],sz,srce[it]);
+		kernel_upb<<<dimGridUpb, dimBlock>>>(order,nx,nz,nzbin,nt,d_pp,d_upb,it,0);
 		cudaCheck();
 
      	if((it+1)%100 == 0){fprintf(stdout,"\r* it = %d / %d (%d%)",it+1,nt,(100*(it+1)/nt));fflush(stdout);}
@@ -507,7 +508,8 @@ void fd_back(int order, float **p, float **pp, float **pr, float **ppr, float **
 			cudaMemcpy(d_pp, pp[0], mtxBufferLength, cudaMemcpyHostToDevice);
       	}else{
 		 	kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
-		 	kernel_time<<<dimGrid, dimBlock>>>(nx,nz,d_p,d_pp,d_v2,d_laplace,dt2);
+			kernel_time<<<dimGrid, dimBlock>>>(nx,nz,d_p,d_pp,d_v2,d_laplace,dt2);
+			kernel_upb<<<dimGridUpb, dimBlock>>>(order,nx,nz,nzbin,nt,d_pp,d_upb,it,1);
 		}
 
 		d_swap = d_pp;

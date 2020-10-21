@@ -11,4 +11,4 @@ rtm_code:
 	nvcc -o $@ $(CFLAGS) $(LDFLAGS) $(C_SRCS) $(LIBS)
 
 clean:
-	rm -f $@
+	rm -f rtm_code

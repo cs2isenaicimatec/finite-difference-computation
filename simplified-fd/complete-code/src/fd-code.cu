@@ -1,5 +1,31 @@
 #include <cuda.h>
-#include "./lib/complete-code.h"
+#include <stdio.h>
+extern "C"{
+	#include "functions.h"
+}
+
+/* file names */
+char *tmpdir = NULL, *vpfile = NULL, *datfile = NULL, *vel_ext_file = NULL;
+/* size */
+int nz, nx, nt;
+float dz, dx, dt;
+
+/* adquisition geometry */
+int ns = -1, sz = -1, fsx = -1, ds = -1, gz = -1;
+
+/* boundary */
+int nxb = -1, nzb = -1, nxe, nze;
+float fac = -1.0;
+
+/* propagation */
+int order = -1; 
+float fpeak;
+
+/* arrays */
+int *sx;
+
+/*aux*/
+int iss = -1, rnd, vel_ext_flag=0;
 
 float *d_p, *d_pr, *d_pp, *d_ppr, *d_swap;
 float *d_laplace, *d_v2, *d_coefs_x, *d_coefs_z;
@@ -257,7 +283,6 @@ void fd_forward(int order, float **p, float **pp, float **v2, float ***upb, int 
 	 	kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
 	 	kernel_time<<<dimGrid, dimBlock>>>(nx,nz,d_p,d_pp,d_v2,d_laplace,dt2);
 	 	kernel_src<<<dimGridSingle, dimBlock>>>(nz,d_pp,sx[is],sz,srce[it]);
-	 	kernel_upb<<<dimGridUpb, dimBlock>>>(order,nx,nz,nzbin,nt,d_pp,d_upb,it,0);
 
 		if((it+1)%100 == 0){fprintf(stdout,"\r* it = %d / %d (%d%)",it+1,nt,(100*(it+1)/nt));fflush(stdout);}
  	}
@@ -295,7 +320,6 @@ void fd_back(int order, float **p, float **pp, float **pr, float **ppr, float **
                 {
                         kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
                         kernel_time<<<dimGrid, dimBlock>>>(nx,nz,d_p,d_pp,d_v2,d_laplace,dt2);
-                        kernel_upb<<<dimGridUpb, dimBlock>>>(order,nx,nz,nzbin,nt,d_pp,d_upb,it,1);
                 }
 
                 d_swap = d_pp;
@@ -331,7 +355,40 @@ int main (int argc, char **argv)
 	float **PP,**P,**PPR,**PR,**tmp;
 	float ***swf, ***upb, ***snaps, **vel2, ***d_obs, ***vel_ext_rnd;
 	float **imloc, **img, **img_lap;
-        read_input(argv[1]);
+	read_input(argv[1]);
+	tmpdir = get_str_input("tmpdir");
+	vpfile = get_str_input("vpfile");
+	datfile = get_str_input("datfile");
+	vel_ext_file = get_str_input("vel_ext_file");
+	nz = get_int_input("nz");
+	nx = get_int_input("nx");
+	nt = get_int_input("nt");
+	ns = get_int_input("ns");
+	sz = get_int_input("sz");
+	fsx = get_int_input("fsx");
+	ds = get_int_input("ds");
+	gz = get_int_input("gz");
+	order = get_int_input("order");
+	nzb = get_int_input("nzb");
+	nxb = get_int_input("nxb");
+	iss = get_int_input("iss");
+	rnd = get_int_input("rnd");
+	dz = get_float_input("dz");
+	dx = get_float_input("dx");
+	dt = get_float_input("dt");
+	fpeak = get_float_input("fpeak");
+	fac = get_float_input("fac");
+	if(vel_ext_file != NULL) vel_ext_flag = 1;
+	if(iss == -1 ) iss = 0;	 	// save snaps of this source
+	if(ns == -1) ns = 1;	 	// number of sources
+	if(sz == -1) sz = 0; 		// source depth
+	if(fsx == -1) fsx = 0; 	// first source position
+	if(ds == -1) ds = 1; 		// source interval
+	if(gz == -1) gz = 0; 		// receivor depth
+	if(order == -1) order = 8;	// FD order
+	if(nzb == -1) nzb = 40;		// z border size
+	if(nxb == -1) nxb = 40;		// x border size
+	if(fac == -1.0) fac = 0.7;
 
 	printf("## vp = %s, d_obs = %s, vel_ext_file = %s, vel_ext_flag = %d \n",vpfile,datfile,vel_ext_file,vel_ext_flag);
 	printf("## nz = %d, nx = %d, nt = %d \n",nz,nx,nt);
@@ -475,7 +532,7 @@ int main (int argc, char **argv)
 	fclose(fimg);
 	fclose(fimg_lap);
         
-        // free memory device
+        //free memory device
 	taper_destroy();
 	free1float(coefs);
 	free1int(sx);
