@@ -29,16 +29,16 @@ int iss = -1, rnd, vel_ext_flag=0;
 
 float *d_p, *d_pr, *d_pp, *d_ppr, *d_swap;
 float *d_laplace, *d_v2, *d_coefs_x, *d_coefs_z;
-float *d_taperx, *d_taperz, *d_upb, *d_sis, *d_img;
+float *d_taperx, *d_taperz, *d_sis, *d_img;
 
 size_t mtxBufferLength, brdBufferLength;
 size_t imgBufferLength, obsBufferLength;
-size_t coefsBufferLength, upbBufferLength;
+size_t coefsBufferLength;
 
 float *taper_x, *taper_z;
 int nxbin, nzbin;
 
-int gridx, gridz, gridupb;
+int gridx, gridz;
 int gridBorder_x, gridBorder_z;
 
 static float dx2inv,dz2inv,dt2;
@@ -120,20 +120,6 @@ __global__ void kernel_src(int nz, float * __restrict__ pp, int sx, int sz, floa
  	pp[sx*nz+sz] += srce;
 }
 
-__global__ void kernel_upb(int order, int nx, int nz, int nzb, int nt, float *__restrict__ pp, float *__restrict__ upb, int it, int flag)
-{
-	int half_order = order/2;
-	int i = blockIdx.x * blockDim.x + threadIdx.x; //nx index
-
- 	if(i<nx){
-		for(int j=nzb-order/2;j<nzb;j++)
-    		if(flag == 0)
-    			upb[(it*nx*half_order)+(i*half_order)+(j-(nzb-half_order))] = pp[i*nz+j];
-        	else
-	        	pp[i*nz+j] = upb[((nt-1-it)*nx*half_order)+(i*half_order)+(j-(nzb-half_order))];
-  	}
-}
-
 __global__ void kernel_sism(int nx, int nz, int nxb, int nt, int is, int it, int gz, float *__restrict__ d_obs, float *__restrict__ ppr)
 {
  	int size = nx-(2*nxb);
@@ -164,7 +150,6 @@ void fd_init_cuda(int order, int nxe, int nze, int nxb, int nzb, int nt, int ns,
    	brdBufferLength = nxb*sizeof(float);
    	mtxBufferLength = (nxe*nze)*sizeof(float);
    	coefsBufferLength = (order+1)*sizeof(float);
-   	upbBufferLength = nt*nxe*(order/2)*sizeof(float);
 	obsBufferLength = nt*(nxe-(2*nxb))*sizeof(float);
    	imgBufferLength = (nxe-(2*nxb))*(nze-(2*nzb))*sizeof(float);
 
@@ -190,7 +175,6 @@ void fd_init_cuda(int order, int nxe, int nze, int nxb, int nzb, int nt, int ns,
 	cudaMalloc((void **) &d_swap, mtxBufferLength);
 	cudaMalloc((void **) &d_laplace, mtxBufferLength);
 
-	cudaMalloc((void **) &d_upb, upbBufferLength);
 	cudaMalloc((void **) &d_sis, obsBufferLength);
 	cudaMalloc((void **) &d_img, imgBufferLength);
 	cudaMalloc((void **) &d_coefs_x, coefsBufferLength);
@@ -211,7 +195,6 @@ void fd_init_cuda(int order, int nxe, int nze, int nxb, int nzb, int nt, int ns,
 	gridBorder_z = (int) ceil(div_z);
 
 	div_x = (float) 8/(float) sizeblock;
-	gridupb = (int) ceil(div_x);
 }
 
 void fd_init(int order, int nx, int nz, int nxb, int nzb, int nt, int ns, float fac, float dx, float dz, float dt)
@@ -240,7 +223,7 @@ void fd_init(int order, int nx, int nz, int nxb, int nzb, int nt, int ns, float 
         return;
 }
 
-void write_buffers(float **p, float **pp, float **v2, float ***upb, float *taperx, float *taperz, float **d_obs, float **imloc, int is, int flag)
+void write_buffers(float **p, float **pp, float **v2, float *taperx, float *taperz, float **d_obs, float **imloc, int is, int flag)
 {
     
         if(flag == 0){
@@ -251,7 +234,6 @@ void write_buffers(float **p, float **pp, float **v2, float ***upb, float *taper
                 cudaMemcpy(d_coefs_z, coefs_z, coefsBufferLength, cudaMemcpyHostToDevice);
                 cudaMemcpy(d_taperx, taperx, brdBufferLength, cudaMemcpyHostToDevice);
                 cudaMemcpy(d_taperz, taperz, brdBufferLength, cudaMemcpyHostToDevice);
-                cudaMemcpy(d_upb, upb[0][0], upbBufferLength, cudaMemcpyHostToDevice);
         }
 
         if(flag == 1){
@@ -262,7 +244,7 @@ void write_buffers(float **p, float **pp, float **v2, float ***upb, float *taper
         }
 }
 // ============================ Propagation ============================
-void fd_forward(int order, float **p, float **pp, float **v2, float ***upb, int nz, int nx, int nt, int is, int sz, int *sx, float *srce, int propag)
+void fd_forward(int order, float **p, float **pp, float **v2, int nz, int nx, int nt, int is, int sz, int *sx, float *srce, int propag)
 {
  	dim3 dimGrid(gridx, gridz);
   	dim3 dimGridTaper(gridx, gridBorder_z);
@@ -272,7 +254,7 @@ void fd_forward(int order, float **p, float **pp, float **v2, float ***upb, int 
 
   	dim3 dimBlock(sizeblock, sizeblock);
   	
-	write_buffers(p,pp,v2,upb,taper_x, taper_z,NULL, NULL,is,0);
+	write_buffers(p,pp,v2,taper_x, taper_z,NULL, NULL,is,0);
 	   	
    	for (int it = 0; it < nt; it++){
 	 	d_swap  = d_pp;
@@ -288,10 +270,9 @@ void fd_forward(int order, float **p, float **pp, float **v2, float ***upb, int 
  	}
  	cudaMemcpy(p[0], d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
  	cudaMemcpy(pp[0], d_pp, mtxBufferLength, cudaMemcpyDeviceToHost);
- 	cudaMemcpy(upb[0][0], d_upb, upbBufferLength, cudaMemcpyDeviceToHost);
 }
 
-void fd_back(int order, float **p, float **pp, float **pr, float **ppr, float **v2, float ***upb, int nz, int nx, int nt, int is, int sz, int gz, float ***snaps, float **imloc, float **d_obs)
+void fd_back(int order, float **p, float **pp, float **pr, float **ppr, float **v2, int nz, int nx, int nt, int is, int sz, int gz, float ***snaps, float **imloc, float **d_obs)
 {
 	int ix, iz, it;
 
@@ -300,8 +281,8 @@ void fd_back(int order, float **p, float **pp, float **pr, float **ppr, float **
   	dim3 dimGridUpb(gridx,1);
 
   	dim3 dimBlock(sizeblock, sizeblock);
-	write_buffers(p,pp,v2,upb,taper_x, taper_z,d_obs,imloc,is,0);
-	write_buffers(pr,ppr,v2,upb,taper_x,taper_z,d_obs,imloc,is,1);
+	write_buffers(p,pp,v2,taper_x, taper_z,d_obs,imloc,is,0);
+	write_buffers(pr,ppr,v2,taper_x,taper_z,d_obs,imloc,is,1);
 	
         for(it=0; it<nt; it++)
         {
@@ -343,19 +324,8 @@ void fd_back(int order, float **p, float **pp, float **pr, float **ppr, float **
 	}
 }
 
-int main (int argc, char **argv)
+void init_args()
 {
-	FILE *fsource = NULL, *fvel_ext = NULL, *fd_obs = NULL, *fvp = NULL, *fsns = NULL,*fsns2 = NULL, *fsnr = NULL, *fimg = NULL, *flim = NULL, *fimg_lap = NULL;
-
-	int iz, ix, it, is;
-
-	float *srce;
-	float **vp = NULL, **vpe = NULL, **vpex = NULL;
-
-	float **PP,**P,**PPR,**PR,**tmp;
-	float ***swf, ***upb, ***snaps, **vel2, ***d_obs, ***vel_ext_rnd;
-	float **imloc, **img, **img_lap;
-	read_input(argv[1]);
 	tmpdir = get_str_input("tmpdir");
 	vpfile = get_str_input("vpfile");
 	datfile = get_str_input("datfile");
@@ -389,7 +359,23 @@ int main (int argc, char **argv)
 	if(nzb == -1) nzb = 40;		// z border size
 	if(nxb == -1) nxb = 40;		// x border size
 	if(fac == -1.0) fac = 0.7;
+}
 
+int main (int argc, char **argv)
+{
+	FILE *fsource = NULL, *fvel_ext = NULL, *fd_obs = NULL, *fvp = NULL, *fsns = NULL,*fsns2 = NULL, *fsnr = NULL, *fimg = NULL, *flim = NULL, *fimg_lap = NULL;
+
+	int iz, ix, it, is;
+
+	float *srce;
+	float **vp = NULL, **vpe = NULL, **vpex = NULL;
+
+	float **PP,**P,**PPR,**PR,**tmp;
+	float ***swf, ***snaps, **vel2, ***d_obs, ***vel_ext_rnd;
+	float **imloc, **img, **img_lap;
+	read_input(argv[1]);
+	init_args();
+	
 	printf("## vp = %s, d_obs = %s, vel_ext_file = %s, vel_ext_flag = %d \n",vpfile,datfile,vel_ext_file,vel_ext_flag);
 	printf("## nz = %d, nx = %d, nt = %d \n",nz,nx,nt);
 	printf("## dz = %f, dx = %f, dt = %f \n",dz,dx,dt);
@@ -453,7 +439,6 @@ int main (int argc, char **argv)
 	P = alloc2float(nze,nxe);
 	PPR = alloc2float(nze,nxe);
 	PR = alloc2float(nze,nxe);
-	upb = alloc3float(order/2,nxe,nt);
 	snaps = alloc3float(nze,nxe,2);
 	imloc = alloc2float(nz,nx);
 	img = alloc2float(nz,nx);
@@ -493,7 +478,7 @@ int main (int argc, char **argv)
 		memset(*PP,0,nze*nxe*sizeof(float));
 		memset(*P,0,nze*nxe*sizeof(float));
     
-		fd_forward(order,P,PP,vel2,upb,nze,nxe,nt,is,sz,sx,srce, is);
+		fd_forward(order,P,PP,vel2,nze,nxe,nt,is,sz,sx,srce, is);
 		fprintf(stdout,"\n");
 
 		for(iz=0; iz<nze; iz++){
@@ -512,7 +497,7 @@ int main (int argc, char **argv)
 		memset(*imloc,0,nz*nx*sizeof(float));
 
 
-		fd_back(order,P,PP,PR,PPR,vel2,upb,nze,nxe,nt,is,sz,gz,snaps,imloc,d_obs_aux);
+		fd_back(order,P,PP,PR,PPR,vel2,nze,nxe,nt,is,sz,gz,snaps,imloc,d_obs_aux);
 		fprintf(stdout,"\n");
 		
 
@@ -549,7 +534,6 @@ int main (int argc, char **argv)
 	free2float(img_lap);
 	free2float(vpex);
 	free2float(vel2);
-	free3float(upb);
 	free3float(d_obs);
 	if(vel_ext_flag) free3float(vel_ext_rnd);
 	cudaFree(d_p);
@@ -566,6 +550,5 @@ int main (int argc, char **argv)
 
 	cudaFree(d_sis);
 	cudaFree(d_img);
-	cudaFree(d_upb);
         return 0;
 }
