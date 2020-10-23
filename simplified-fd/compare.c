@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "functions.h"
 
 #define Null -99999
 
@@ -10,30 +11,78 @@ void rmse(float *dif, int len);
 void stdev(float mean, float *dif, int len);
 
 
-void main ()
+void compare2alloc(int x, int z)
 {
-    int mtxBufferLength = (315 + 2 * 50)*(195 + 2 * 50)*sizeof(float);
-    float *output_cuda;
-    float *output_dpc;
-    output_cuda = (float*)malloc(mtxBufferLength);
-    output_dpc = (float*)malloc(mtxBufferLength);
-    memset(output_cuda, 0, mtxBufferLength);
-    memset(output_dpc, 0, mtxBufferLength);
+    int mtxBufferLength = x*z*sizeof(float);
+    float **output_1;
+    float **output_2;
+    output_1 = alloc2float(x, z);
+    output_2 = alloc2float(x, z);
+    memset(*output_1, 0, mtxBufferLength);
+    memset(*output_2, 0, mtxBufferLength);
 
-    FILE *foutput_cuda, *foutput_dpc;
-    foutput_cuda = fopen("output_cuda.bin", "rb");
-    foutput_dpc = fopen("output_teste.bin", "rb");
-
+    FILE *foutput_1, *foutput_2;
+    foutput_1 = fopen("../host/rtm-cuda/output/dir.image", "r");
+    if(foutput_1 == NULL)
+    {
+        perror("File 1: ");
+        return;
+    }
+    foutput_2 = fopen("./complete-code/output/dir.image", "r");
+    if(foutput_2 == NULL)
+    {
+        perror("File 2: ");
+        return;
+    }
+    printf("Comparação de binários 2D:\n");
     printf("Lendo arquivos...\n");
-    fread(output_cuda, sizeof(float), (315 + 2 * 50)*(195 + 2 * 50), foutput_cuda);
-    fread(output_dpc, sizeof(float), (315 + 2 * 50)*(195 + 2 * 50), foutput_dpc); 
-    fclose(foutput_cuda);
-    fclose(foutput_dpc);
+    fread(*output_1, sizeof(float), x*z, foutput_1);
+    fread(*output_2, sizeof(float), x*z, foutput_2); 
+    fclose(foutput_1);
+    fclose(foutput_2);
 
     printf("Comparando...\n");
-    compare(output_cuda, output_dpc, mtxBufferLength/sizeof(float));
-    free(output_cuda);
-    free(output_dpc);
+    compare(*output_1, *output_2, x*z);
+    free2float(output_1);
+    free2float(output_2);
+}
+
+void compare1alloc(int len)
+{
+    int mtxBufferLength = len*sizeof(float);
+    float *output_1;
+    float *output_2;
+    output_1 = alloc1float(len);
+    output_2 = alloc1float(len);
+    memset(output_1, 0, mtxBufferLength);
+    memset(output_2, 0, mtxBufferLength);
+
+    FILE *foutput_1, *foutput_2;
+    foutput_1 = fopen("../host/rtm-cuda/output/dir.image", "r");
+    foutput_2 = fopen("./complete-code/output/dir.image", "r");
+    if(foutput_1 == NULL || foutput_2 == NULL)
+    {
+        perror("");
+        return;
+    }
+    printf("Comparação de binários 1D:\n");
+    printf("Lendo arquivos...\n");
+    fread(output_1, sizeof(float), len, foutput_1);
+    fread(output_2, sizeof(float), len, foutput_2); 
+    fclose(foutput_1);
+    fclose(foutput_2);
+
+    printf("Comparando...\n");
+    compare(output_1, output_2, len);
+    free1float(output_1);
+    free1float(output_2);
+}
+
+void main ()
+{
+    compare2alloc(315,195);
+    printf("\n");
+    // compare1alloc(315*195);
 }
 
 void compare(float *input1, float *input2, int len)

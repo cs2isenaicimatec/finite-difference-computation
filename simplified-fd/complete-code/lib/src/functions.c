@@ -287,8 +287,6 @@ Author:  Dave Hale, Colorado School of Mines, 04/29/90
 	
 	x = PI*fpeak*t;
 	xx = x*x;
-	/* return (-6.0+24.0*xx-8.0*xx*xx)*exp(-xx); */
-	/* return PI*fpeak*(4.0*xx*x-6.0*x)*exp(-xx); */
 	return exp(-xx)*(1.0-2.0*xx);
 }
 
@@ -296,14 +294,6 @@ void ricker_wavelet(int nt, float dt, float peak, float *s)
 {
 	int it;
 	for(it = 0; it < nt; it++){
-		/*
-		if(it*dt > 2.0/peak){
-			s[it] = 0.0;
-		}
-		else{
-			s[it] = ricker(it*dt - 1.0/peak, peak);
-		}
-		*/
 		s[it] = ricker(it*dt - 1.0/peak, peak);
 	}
 }

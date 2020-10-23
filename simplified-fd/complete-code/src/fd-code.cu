@@ -432,10 +432,10 @@ int main (int argc, char **argv)
 	}
 
 	vel2 = alloc2float(nze,nxe);
-        fd_init(order,nxe,nze,nxb,nzb,nt,ns,fac,dx,dz,dt);
+	fd_init(order,nxe,nze,nxb,nzb,nt,ns,fac,dx,dz,dt);
 	taper_init(nxb,nzb,fac);
 
-        PP = alloc2float(nze,nxe);
+	PP = alloc2float(nze,nxe);
 	P = alloc2float(nze,nxe);
 	PPR = alloc2float(nze,nxe);
 	PR = alloc2float(nze,nxe);
@@ -457,9 +457,9 @@ int main (int argc, char **argv)
 	fimg_lap = fopen(filepath,"w");
 	
 	memset(*img,0,nz*nx*sizeof(float));
-        memset(*img_lap,0,nz*nx*sizeof(float));
+	memset(*img_lap,0,nz*nx*sizeof(float));
         
-        for(is=0; is<ns; is++){
+	for(is=0; is<ns; is++){
 		fprintf(stdout,"** source %d, at (%d,%d) \n",is+1,sx[is]-nxb,sz-nzb);
 
 		if (vel_ext_flag){
