@@ -144,8 +144,7 @@ __global__ void kernel_img(int nx, int nz, int nxb, int nzb, float * __restrict_
 // ============================ Initialization ===========================
 void fd_init_cuda(int order, int nxe, int nze, int nxb, int nzb, int nt, int ns, float fac)
 {
-        float dfrac;
-	// cudaProfilerSart();
+	float dfrac;
    	nxbin=nxb; nzbin=nzb;
    	brdBufferLength = nxb*sizeof(float);
    	mtxBufferLength = (nxe*nze)*sizeof(float);
@@ -199,9 +198,9 @@ void fd_init_cuda(int order, int nxe, int nze, int nxb, int nzb, int nt, int ns,
 
 void fd_init(int order, int nx, int nz, int nxb, int nzb, int nt, int ns, float fac, float dx, float dz, float dt)
 {
-        int io;
+	int io;
 	dx2inv = (1./dx)*(1./dx);
-        dz2inv = (1./dz)*(1./dz);
+	dz2inv = (1./dz)*(1./dz);
 	dt2 = dt*dt;
 
 	coefs = calc_coefs(order);
@@ -284,44 +283,45 @@ void fd_back(int order, float **p, float **pp, float **pr, float **ppr, float **
 	write_buffers(p,pp,v2,taper_x, taper_z,d_obs,imloc,is,0);
 	write_buffers(pr,ppr,v2,taper_x,taper_z,d_obs,imloc,is,1);
 	
-        for(it=0; it<nt; it++)
-        {
-                if(it==0 || it==1)
-                {
-                        for(ix=0; ix<nx; ix++)
-                        {
-                                for(iz=0; iz<nz; iz++)
-                                {
-                                        pp[ix][iz] = snaps[1-it][ix][iz];
-                                }
-                        }
-                        cudaMemcpy(d_pp, pp[0], mtxBufferLength, cudaMemcpyHostToDevice);
-                }
-                else
-                {
-                        kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
-                        kernel_time<<<dimGrid, dimBlock>>>(nx,nz,d_p,d_pp,d_v2,d_laplace,dt2);
-                }
+	for(it=0; it<nt; it++)
+	{
+		if(it==0 || it==1)
+		{
+			for(ix=0; ix<nx; ix++)
+			{
+				for(iz=0; iz<nz; iz++)
+				{
+					pp[ix][iz] = snaps[1-it][ix][iz];
+				}
+			}
+			cudaMemcpy(d_pp, pp[0], mtxBufferLength, cudaMemcpyHostToDevice);
+		}
+		else
+		{
+			kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
+			kernel_time<<<dimGrid, dimBlock>>>(nx,nz,d_p,d_pp,d_v2,d_laplace,dt2);
+		}
 
-                d_swap = d_pp;
-                d_pp = d_p;
-                d_p = d_swap;
+		d_swap = d_pp;
+		d_pp = d_p;
+		d_p = d_swap;
 
-                kernel_tapper<<<dimGridTaper, dimBlock>>>(nx,nz,nxbin,nzbin,d_pr,d_ppr,d_taperx,d_taperz);
-                kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_pr,d_laplace, d_coefs_x, d_coefs_z);
-                kernel_time<<<dimGrid, dimBlock>>>(nx,nz,d_pr,d_ppr,d_v2,d_laplace,dt2);
-                kernel_sism<<<dimGridUpb, dimBlock>>>(nx,nz,nxbin,nt,is,it,gz,d_sis,d_ppr);
-                kernel_img<<<dimGrid, dimBlock>>>(nx,nz,nxbin,nzbin,d_img,d_p,d_ppr);
+		kernel_tapper<<<dimGridTaper, dimBlock>>>(nx,nz,nxbin,nzbin,d_pr,d_ppr,d_taperx,d_taperz);
+		kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_pr,d_laplace, d_coefs_x, d_coefs_z);
+		kernel_time<<<dimGrid, dimBlock>>>(nx,nz,d_pr,d_ppr,d_v2,d_laplace,dt2);
+		kernel_sism<<<dimGridUpb, dimBlock>>>(nx,nz,nxbin,nt,is,it,gz,d_sis,d_ppr);
+		kernel_img<<<dimGrid, dimBlock>>>(nx,nz,nxbin,nzbin,d_img,d_p,d_ppr);
 
-                d_swap = d_ppr;
-                d_ppr = d_pr;
-                d_pr = d_swap;
+		d_swap = d_ppr;
+		d_ppr = d_pr;
+		d_pr = d_swap;
 
-                if((it+1)%100 == 0)
-                {
-                        fprintf(stdout,"\r* it = %d / %d (%d%)",it+1,nt,(100*(it+1)/nt));fflush(stdout);
-                }
+		if((it+1)%100 == 0)
+		{
+			fprintf(stdout,"\r* it = %d / %d (%d%)",it+1,nt,(100*(it+1)/nt));fflush(stdout);
+		}
 	}
+	cudaMemcpy(imloc[0], d_img, imgBufferLength, cudaMemcpyDeviceToHost);
 }
 
 void init_args()
@@ -477,7 +477,7 @@ int main (int argc, char **argv)
 
 		memset(*PP,0,nze*nxe*sizeof(float));
 		memset(*P,0,nze*nxe*sizeof(float));
-    
+		
 		fd_forward(order,P,PP,vel2,nze,nxe,nt,is,sz,sx,srce, is);
 		fprintf(stdout,"\n");
 
