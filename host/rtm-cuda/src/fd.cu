@@ -450,7 +450,7 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 		kernel_src<<<dimGridSingle, dimBlock>>>(nz,d_pp,sx[is],sz,srce[it]);
 		kernel_upb<<<dimGridUpb, dimBlock>>>(order,nx,nz,nzbin,nt,d_pp,d_upb,it,0);
 		cudaCheck();
-
+		
      	if((it+1)%100 == 0){fprintf(stdout,"\r* it = %d / %d (%d%)",it+1,nt,(100*(it+1)/nt));fflush(stdout);}
      	// op_L_counter++;
  	}
@@ -464,16 +464,7 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 	cudaMemcpy(p[0], d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
  	cudaMemcpy(pp[0], d_pp, mtxBufferLength, cudaMemcpyDeviceToHost);
 	cudaMemcpy(upb[0][0], d_upb, upbBufferLength, cudaMemcpyDeviceToHost);
-	int y, x;
-	FILE *teste;
-	teste = fopen("file-teste","w");
-	for (x = 0; x < nx; x++)
-	{
-		for (y = 0; y < nz; y++)
-		{
-			fprintf(teste,"%f\n", p[x][y]);
-		}
-	}
+	
 	// Calc avg read time
 	gettimeofday(&etCR, NULL);
 	elapsed = ((etCR.tv_sec - stCR.tv_sec) * 1000000) + (etCR.tv_usec - stCR.tv_usec);

@@ -264,21 +264,12 @@ void fd_forward(int order, float **p, float **pp, float **v2, int nz, int nx, in
 	 	kernel_lap<<<dimGrid, dimBlock>>>(order,nx,nz,d_p,d_laplace,d_coefs_x,d_coefs_z);
 	 	kernel_time<<<dimGrid, dimBlock>>>(nx,nz,d_p,d_pp,d_v2,d_laplace,dt2);
 	 	kernel_src<<<dimGridSingle, dimBlock>>>(nz,d_pp,sx[is],sz,srce[it]);
-
+		
 		if((it+1)%100 == 0){fprintf(stdout,"\r* it = %d / %d (%d%)",it+1,nt,(100*(it+1)/nt));fflush(stdout);}
  	}
  	cudaMemcpy(p[0], d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
 	cudaMemcpy(pp[0], d_pp, mtxBufferLength, cudaMemcpyDeviceToHost);
-	int y, x;
-	FILE *teste;
-	teste = fopen("file-teste","w");
-	for (x = 0; x < nx; x++)
-	{
-		for (y = 0; y < nz; y++)
-		{
-			fprintf(teste,"%f\n", p[x][y]);
-		}
-	}
+	
 }
 
 void fd_back(int order, float **p, float **pp, float **pr, float **ppr, float **v2, int nz, int nx, int nt, int is, int sz, int gz, float ***snaps, float **imloc, float **d_obs)

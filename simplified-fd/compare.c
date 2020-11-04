@@ -82,6 +82,11 @@ void compare(float *input1, float *input2, int len)
         {
             count++;
         }
+        else
+        {
+            printf("%.30f\n", dif[i]);
+        }
+        
         length++;
     }
     mae = sum / (float)length;
