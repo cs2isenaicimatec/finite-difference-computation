@@ -51,28 +51,28 @@ static float *coefs_x = NULL;
 // ============================ Kernels ============================
 __global__ void kernel_lap(int order, int nx, int nz, float * __restrict__ p, float * __restrict__ lap, float * __restrict__ coefsx, float * __restrict__ coefsz)
 {
-        int half_order=order/2;
-        int i =  half_order + blockIdx.x * blockDim.x + threadIdx.x; // Global row index
-        int j =  half_order + blockIdx.y * blockDim.y + threadIdx.y; // Global column index
-        int mult = i*nz;
-        int aux;
-        float acmx = 0, acmz = 0;
+	int half_order=order/2;
+	int i =  half_order + blockIdx.x * blockDim.x + threadIdx.x; // Global row index
+	int j =  half_order + blockIdx.y * blockDim.y + threadIdx.y; // Global column index
+	int mult = i*nz;
+	int aux;
+	float acmx = 0, acmz = 0;
 
-        if(i<nx - half_order)
-        {
-                if(j<nz - half_order)
-                {
-                        for(int io=0;io<=order;io++)
-                        {
-                                aux = io-half_order;
-                                acmz += p[mult + j+aux]*coefsz[io];
-                                acmx += p[(i+aux)*nz + j]*coefsx[io];
-                        }
-                        lap[mult +j] = acmz + acmx;
-                        acmx = 0.0;
-                        acmz = 0.0;
-                }
-        }
+	if(i<nx - half_order)
+	{
+		if(j<nz - half_order)
+		{
+			for(int io=0;io<=order;io++)
+			{
+				aux = io-half_order;
+				acmz += p[mult + j+aux]*coefsz[io];
+				acmx += p[(i+aux)*nz + j]*coefsx[io];
+			}
+			lap[mult +j] = acmz + acmx;
+			acmx = 0.0;
+			acmz = 0.0;
+		}
+	}
 
 }
 
@@ -225,22 +225,22 @@ void fd_init(int order, int nx, int nz, int nxb, int nzb, int nt, int ns, float 
 void write_buffers(float **p, float **pp, float **v2, float *taperx, float *taperz, float **d_obs, float **imloc, int is, int flag)
 {
     
-        if(flag == 0){
-                cudaMemcpy(d_p, p[0], mtxBufferLength, cudaMemcpyHostToDevice);
-                cudaMemcpy(d_pp, pp[0], mtxBufferLength, cudaMemcpyHostToDevice);
-                cudaMemcpy(d_v2, v2[0], mtxBufferLength, cudaMemcpyHostToDevice);
-                cudaMemcpy(d_coefs_x, coefs_x, coefsBufferLength, cudaMemcpyHostToDevice);
-                cudaMemcpy(d_coefs_z, coefs_z, coefsBufferLength, cudaMemcpyHostToDevice);
-                cudaMemcpy(d_taperx, taperx, brdBufferLength, cudaMemcpyHostToDevice);
-                cudaMemcpy(d_taperz, taperz, brdBufferLength, cudaMemcpyHostToDevice);
-        }
+	if(flag == 0){
+		cudaMemcpy(d_p, p[0], mtxBufferLength, cudaMemcpyHostToDevice);
+		cudaMemcpy(d_pp, pp[0], mtxBufferLength, cudaMemcpyHostToDevice);
+		cudaMemcpy(d_v2, v2[0], mtxBufferLength, cudaMemcpyHostToDevice);
+		cudaMemcpy(d_coefs_x, coefs_x, coefsBufferLength, cudaMemcpyHostToDevice);
+		cudaMemcpy(d_coefs_z, coefs_z, coefsBufferLength, cudaMemcpyHostToDevice);
+		cudaMemcpy(d_taperx, taperx, brdBufferLength, cudaMemcpyHostToDevice);
+		cudaMemcpy(d_taperz, taperz, brdBufferLength, cudaMemcpyHostToDevice);
+	}
 
-        if(flag == 1){
-                cudaMemcpy(d_pr, p[0], mtxBufferLength, cudaMemcpyHostToDevice);
-                cudaMemcpy(d_ppr, pp[0], mtxBufferLength, cudaMemcpyHostToDevice);
-                cudaMemcpy(d_sis, d_obs[is], obsBufferLength, cudaMemcpyHostToDevice);
-                cudaMemcpy(d_img, imloc[0], imgBufferLength, cudaMemcpyHostToDevice);
-        }
+	if(flag == 1){
+		cudaMemcpy(d_pr, p[0], mtxBufferLength, cudaMemcpyHostToDevice);
+		cudaMemcpy(d_ppr, pp[0], mtxBufferLength, cudaMemcpyHostToDevice);
+		cudaMemcpy(d_sis, d_obs[is], obsBufferLength, cudaMemcpyHostToDevice);
+		cudaMemcpy(d_img, imloc[0], imgBufferLength, cudaMemcpyHostToDevice);
+	}
 }
 // ============================ Propagation ============================
 void fd_forward(int order, float **p, float **pp, float **v2, int nz, int nx, int nt, int is, int sz, int *sx, float *srce, int propag)
@@ -268,7 +268,17 @@ void fd_forward(int order, float **p, float **pp, float **v2, int nz, int nx, in
 		if((it+1)%100 == 0){fprintf(stdout,"\r* it = %d / %d (%d%)",it+1,nt,(100*(it+1)/nt));fflush(stdout);}
  	}
  	cudaMemcpy(p[0], d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
- 	cudaMemcpy(pp[0], d_pp, mtxBufferLength, cudaMemcpyDeviceToHost);
+	cudaMemcpy(pp[0], d_pp, mtxBufferLength, cudaMemcpyDeviceToHost);
+	int y, x;
+	FILE *teste;
+	teste = fopen("file-teste","w");
+	for (x = 0; x < nx; x++)
+	{
+		for (y = 0; y < nz; y++)
+		{
+			fprintf(teste,"%f\n", p[x][y]);
+		}
+	}
 }
 
 void fd_back(int order, float **p, float **pp, float **pr, float **ppr, float **v2, int nz, int nx, int nt, int is, int sz, int gz, float ***snaps, float **imloc, float **d_obs)
@@ -385,7 +395,7 @@ int main (int argc, char **argv)
 	ricker_wavelet(nt, dt, fpeak, srce);
 	sx = alloc1int(ns);
 	for(is=0; is<ns; is++){
-		sx[is] = fsx + is*ds + nxb;
+		sx[is] = fsx + (is*ds) + nxb;
 	}
 	sz += nzb;
 	gz += nzb;
@@ -404,7 +414,7 @@ int main (int argc, char **argv)
 	fd_obs = fopen(datfile,"r");
 	fread(**d_obs,sizeof(float),nt*nx*ns,fd_obs);
 	fclose(fd_obs);
-
+	
 	float **d_obs_aux=(float**)malloc(ns*sizeof(float*));
 	for(int i=0; i<ns; i++) 
 		d_obs_aux[i] = (float*)malloc((nt*nx)*sizeof(float)); 
@@ -421,7 +431,6 @@ int main (int argc, char **argv)
 	fvp = fopen(vpfile,"r");
 	fread(vp[0],sizeof(float),nz*nx,fvp);
 	fclose(fvp);
-
 	vpe = alloc2float(nze,nxe);
 	vpex = vpe;
 
@@ -458,7 +467,8 @@ int main (int argc, char **argv)
 	
 	memset(*img,0,nz*nx*sizeof(float));
 	memset(*img_lap,0,nz*nx*sizeof(float));
-        
+	FILE *foutput;
+	foutput = fopen("image.num", "w");
 	for(is=0; is<ns; is++){
 		fprintf(stdout,"** source %d, at (%d,%d) \n",is+1,sx[is]-nxb,sz-nzb);
 
@@ -487,7 +497,7 @@ int main (int argc, char **argv)
 				snaps[1][ix][iz] = PP[ix][iz];
 			}
 		}
-
+		
 		fprintf(stdout,"** backward propagation %d, at (%d,%d) \n",is+1,sx[is]-nxb,sz-nzb);
 
 		memset(*PP,0,nze*nxe*sizeof(float));
@@ -501,12 +511,19 @@ int main (int argc, char **argv)
 		fprintf(stdout,"\n");
 		
 
+		fprintf(foutput,"======== %i ========\n", is);
 		for(iz=0; iz<nz; iz++){
 			for(ix=0; ix<nx; ix++){
 				img[ix][iz] += imloc[ix][iz];
+				fprintf(foutput, " %f \n", img[ix][iz]);
 			}
 		}
 	}
+	// for(iz=0; iz<nz; iz++){
+	// 	for(ix=0; ix<nx; ix++){
+	// 		fprintf(foutput, " %f \n", img[ix][iz]);
+	// 	}
+	// }
 	fwrite(*img,sizeof(float),nz*nx,fimg);
 
 	fwrite(*img_lap,sizeof(float),nz*nx,fimg_lap);

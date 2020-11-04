@@ -463,7 +463,17 @@ void fd_forward(int order, float **p, float **pp, float **v2,
 	gettimeofday(&stCR, NULL);
 	cudaMemcpy(p[0], d_p, mtxBufferLength, cudaMemcpyDeviceToHost);
  	cudaMemcpy(pp[0], d_pp, mtxBufferLength, cudaMemcpyDeviceToHost);
- 	cudaMemcpy(upb[0][0], d_upb, upbBufferLength, cudaMemcpyDeviceToHost);
+	cudaMemcpy(upb[0][0], d_upb, upbBufferLength, cudaMemcpyDeviceToHost);
+	int y, x;
+	FILE *teste;
+	teste = fopen("file-teste","w");
+	for (x = 0; x < nx; x++)
+	{
+		for (y = 0; y < nz; y++)
+		{
+			fprintf(teste,"%f\n", p[x][y]);
+		}
+	}
 	// Calc avg read time
 	gettimeofday(&etCR, NULL);
 	elapsed = ((etCR.tv_sec - stCR.tv_sec) * 1000000) + (etCR.tv_usec - stCR.tv_usec);

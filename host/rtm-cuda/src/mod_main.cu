@@ -113,7 +113,7 @@ int main (int argc, char **argv){
 	ricker_wavelet(nt, dt, fpeak, srce);
 	sx = alloc1int(ns);
 	for(is=0; is<ns; is++){
-		sx[is] = fsx + is*ds + nxb;
+		sx[is] = fsx + (is*ds) + nxb;
 	}
 	sz += nzb;
 	gz += nzb;
@@ -135,7 +135,6 @@ int main (int argc, char **argv){
 	fd_obs = fopen(datfile,"r");
 	fread(**d_obs,sizeof(float),nt*nx*ns,fd_obs);
 	fclose(fd_obs);
-
 	float **d_obs_aux=(float**)malloc(ns*sizeof(float*));
 	for(int i=0; i<ns; i++) 
 		d_obs_aux[i] = (float*)malloc((nt*nx)*sizeof(float)); 
@@ -153,7 +152,7 @@ int main (int argc, char **argv){
 	fvp = fopen(vpfile,"r");
 	fread(vp[0],sizeof(float),nz*nx,fvp);
 	fclose(fvp);
-
+	
 	/* vp size estended to vpe */
 	vpe = alloc2float(nze,nxe);
 	vpex = vpe;
@@ -163,7 +162,6 @@ int main (int argc, char **argv){
 			vpe[ix+nxb][iz+nzb] = vp[ix][iz]; 
 		}
 	}
-
 	/* allocate vel2 for vpe^2 */
 	vel2 = alloc2float(nze,nxe);
 
@@ -202,7 +200,8 @@ int main (int argc, char **argv){
 	
 	memset(*img,0,nz*nx*sizeof(float));
 	memset(*img_lap,0,nz*nx*sizeof(float));
-
+	FILE *foutput;
+	foutput = fopen("image.num", "w");
 	for(is=0; is<ns; is++){
 		fprintf(stdout,"** source %d, at (%d,%d) \n",is+1,sx[is]-nxb,sz-nzb);
 		/* Calc (or load) velocity model border */
@@ -223,7 +222,7 @@ int main (int argc, char **argv){
 		memset(*P,0,nze*nxe*sizeof(float));
     
 		cudaProfilerStart();
-		fd_forward(order,P,PP,vel2,upb,nze,nxe,nt,is,sz,sx,srce, is);
+		fd_forward(order,P,PP,vel2,upb,nze,nxe,nt,is,sz,sx,srce,is);
 		fprintf(stdout,"\n");
 
 		for(iz=0; iz<nze; iz++){
@@ -247,13 +246,19 @@ int main (int argc, char **argv){
     cudaProfilerStop();
 		
 		/* stack migrated images */
+		fprintf(foutput,"======== %i ========\n", is);
 		for(iz=0; iz<nz; iz++){
 			for(ix=0; ix<nx; ix++){
 				img[ix][iz] += imloc[ix][iz];
+				fprintf(foutput, " %f \n", img[ix][iz]);
 			}
 		}
 	}
-	
+	// for(iz=0; iz<nz; iz++){
+	// 	for(ix=0; ix<nx; ix++){
+	// 		fprintf(foutput, " %f \n", img[ix][iz]);
+	// 	}
+	// }
 	cudaProfilerStop();
 	// cudaDeviceReset();
 #ifdef  PERF_COUNTERS

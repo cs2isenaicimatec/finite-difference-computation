@@ -4,14 +4,12 @@
 #include <math.h>
 #include "functions.h"
 
-#define Null -99999
-
 void compare(float *input1, float *input2, int len);
 void rmse(float *dif, int len);
 void stdev(float mean, float *dif, int len);
+FILE* read_file(char *path);
 
-
-void compare2alloc(int x, int z)
+void compare2D(int x, int z)
 {
     int mtxBufferLength = x*z*sizeof(float);
     float **output_1;
@@ -22,18 +20,8 @@ void compare2alloc(int x, int z)
     memset(*output_2, 0, mtxBufferLength);
 
     FILE *foutput_1, *foutput_2;
-    foutput_1 = fopen("../host/rtm-cuda/output/dir.image", "r");
-    if(foutput_1 == NULL)
-    {
-        perror("File 1: ");
-        return;
-    }
-    foutput_2 = fopen("./complete-code/output/dir.image", "r");
-    if(foutput_2 == NULL)
-    {
-        perror("File 2: ");
-        return;
-    }
+    foutput_1 = read_file("../host/rtm-cuda/output/dir.image");
+    foutput_2 = read_file("./complete-code/output/dir.image");
     printf("Comparação de binários 2D:\n");
     printf("Lendo arquivos...\n");
     fread(*output_1, sizeof(float), x*z, foutput_1);
@@ -58,13 +46,8 @@ void compare1alloc(int len)
     memset(output_2, 0, mtxBufferLength);
 
     FILE *foutput_1, *foutput_2;
-    foutput_1 = fopen("../host/rtm-cuda/output/dir.image", "r");
-    foutput_2 = fopen("./complete-code/output/dir.image", "r");
-    if(foutput_1 == NULL || foutput_2 == NULL)
-    {
-        perror("");
-        return;
-    }
+    foutput_1 = read_file("../host/rtm-cuda/file-teste");
+    foutput_2 = read_file("./complete-code/file-teste");
     printf("Comparação de binários 1D:\n");
     printf("Lendo arquivos...\n");
     fread(output_1, sizeof(float), len, foutput_1);
@@ -80,9 +63,10 @@ void compare1alloc(int len)
 
 void main ()
 {
-    compare2alloc(315,195);
+    
+    // compare3Dread(6,315,1700);
     printf("\n");
-    // compare1alloc(315*195);
+    compare1alloc(315*195);
 }
 
 void compare(float *input1, float *input2, int len)
@@ -92,20 +76,13 @@ void compare(float *input1, float *input2, int len)
     int count = 0, length = 0;
     for (i = 0; i < len; i++)
     {
-        if (fabsf(input1[i]) < 10 && fabsf(input2[i]) < 10)
+        dif[i] = fabsf(input1[i] - input2[i]);
+        sum += dif[i];
+        if (dif[i] == 0.0)
         {
-            dif[i] = fabsf(input1[i] - input2[i]);
-            sum += dif[i];
-            if (dif[i] == 0.0)
-            {
-                count++;
-            }
-            length++;
+            count++;
         }
-        else
-        {
-            dif[i] = Null;
-        }
+        length++;
     }
     mae = sum / (float)length;
     acc = (float)count/(float)len*100;
@@ -121,11 +98,8 @@ void rmse(float *dif, int len)
     float sum = 0.0;
     for (i = 0; i < len; i++)
     {
-        if (dif[i] != Null)
-        {
-            sum += powf(dif[i], 2);
-            length++;
-        }
+        sum += powf(dif[i], 2);
+        length++;
     }
     printf("RMSE: %e\n", sqrtf(sum/(float)length));
 }
@@ -135,12 +109,21 @@ void stdev(float mean, float *dif, int len)
     int i, length = 0;
     float p = 0.0, sigma = 0.0;
     for(i = 0; i < len; i++){
-        if (dif[i] != Null)
-        {    
-            p = p + powf(dif[i] - mean, 2);
-            length++;
-        }
+        p = p + powf(dif[i] - mean, 2);
+        length++;
     }
     sigma = sqrt(p/((float)length-1));
     printf("Standard deviation: %e\n", sigma);
+}
+
+FILE* read_file(char *path)
+{
+    FILE *file;
+    file = fopen(path, "r");
+    if(file == NULL)
+    {
+        perror("File 1: ");
+        return;
+    }
+    return file;
 }
