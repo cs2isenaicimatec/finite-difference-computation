@@ -3,7 +3,7 @@
 #include <math.h>
 #include <string.h>
 
-#define sizeblock 16
+#define sizeblock 8
 #define PI (3.141592653589793)
 
 static float *taperx=NULL,*taperz=NULL;

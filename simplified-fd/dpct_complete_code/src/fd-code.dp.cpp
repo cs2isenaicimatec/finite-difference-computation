@@ -1,6 +1,5 @@
 #include <CL/sycl.hpp>
-//#include <dpct/dpct.hpp>
-#include "../../include/dpct/dpct.hpp"
+#include <dpct/dpct.hpp>
 #include <stdio.h>
 extern "C"{
 #include "functions.h"
