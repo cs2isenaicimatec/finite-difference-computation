@@ -21,7 +21,7 @@ void compare2alloc(int x, int z)
     memset(*output_2, 0, mtxBufferLength);
 
     FILE *foutput_1, *foutput_2;
-    foutput_1 = read_file("./dir.image");
+    foutput_1 = read_file("./complete-code/output/dpcpp-dir.image");
     foutput_2 = read_file("./complete-code/output/dir.image");
     if (foutput_1 == NULL || foutput_2 == NULL)
         return;
@@ -49,7 +49,7 @@ void compare1alloc(int len)
     memset(output_2, 0, mtxBufferLength);
 
     FILE *foutput_1, *foutput_2;
-    foutput_1 = read_file("../host/rtm-cuda/file-teste");
+    foutput_1 = read_file("./file-teste-it750");
     foutput_2 = read_file("./complete-code/file-teste");
     if (foutput_1 == NULL || foutput_2 == NULL)
         return;
