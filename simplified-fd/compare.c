@@ -8,6 +8,8 @@ void compare(float *input1, float *input2, int len);
 void compare2D(float **input1, float **input2, int x, int y);
 void rmse(float *dif, int len);
 void stdev(float mean, float *dif, int len);
+void rmse2(float **dif, int x, int y);
+void stdev2(float mean, float **dif, int x, int y);
 FILE* read_file(char *path);
 
 void compare2alloc(int x, int z)
@@ -21,7 +23,7 @@ void compare2alloc(int x, int z)
     memset(*output_2, 0, mtxBufferLength);
 
     FILE *foutput_1, *foutput_2;
-    foutput_1 = read_file("./complete-code/output/dpcpp-dir.image");
+    foutput_1 = read_file("./dpct_complete_code/output/dir.image");
     foutput_2 = read_file("./complete-code/output/dir.image");
     if (foutput_1 == NULL || foutput_2 == NULL)
         return;
@@ -77,8 +79,10 @@ void main ()
 void compare2D(float **input1, float **input2, int x, int y)
 {
     int ix, iy;
-    float dif[x][y], mae, sum = 0.0, acc;
-    int count = 0, length = 0;
+    float **dif, mae, sum = 0.0, acc;
+    dif = alloc2float(x, y);
+    memset(*dif, 0, x*y*sizeof(float));
+    int count = 0;
     for (ix = 0; ix < x; ix++)
     {
         for (iy = 0; iy < y; iy++)
@@ -89,16 +93,14 @@ void compare2D(float **input1, float **input2, int x, int y)
             {
                 count++;
             }
-            
-            length++;
-            }
+        }
     }
-    mae = sum / (float)length;
-    acc = (float)count/(float)x*y*100;
+    mae = sum / (float)(x*y);
+    acc = (float)count/(float)(x*y)*100;
     printf("Accuracy: %.2f%\n", acc);
-    // rmse(dif,len);
+    rmse2(dif, x, y);
     printf("MAE: %e\n",mae);
-    // stdev(mae, dif, len);
+    stdev2(mae, dif, x, y);
 }
 
 void compare(float *input1, float *input2, int len)
@@ -146,6 +148,35 @@ void stdev(float mean, float *dif, int len)
         length++;
     }
     sigma = sqrt(p/((float)length-1));
+    printf("Standard deviation: %e\n", sigma);
+}
+
+void rmse2(float **dif, int x, int y)
+{
+    int ix, iy;
+    float sum = 0.0;
+    for (ix = 0; ix < x; ix++)
+    {
+        for (iy = 0; iy < y; iy++)
+        {
+            sum += powf(dif[ix][iy], 2);
+        }
+    }
+    printf("RMSE: %e\n", sqrtf(sum/(float)(x*y)));
+}
+
+void stdev2(float mean, float **dif, int x, int y)
+{
+    int ix, iy;
+    float p = 0.0, sigma = 0.0;
+    for(ix = 0; ix < x; ix++)
+    {
+        for(ix = 0; ix < x; ix++)
+        {
+            p = p + powf(dif[ix][iy] - mean, 2);
+        }
+    }
+    sigma = sqrt(p/((float)(x*y)-1));
     printf("Standard deviation: %e\n", sigma);
 }
 
