@@ -1,7 +1,0 @@
-output/
-*_perf.data
-rtm_cuda
-perf/
-s*-perf.data
-*perf.data
-*perf.data.old
