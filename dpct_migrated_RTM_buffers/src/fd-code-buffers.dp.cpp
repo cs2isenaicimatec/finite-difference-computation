@@ -539,9 +539,10 @@ void init_args()
 
 int main (int argc, char **argv)
 {
- dpct::device_ext &dev_ct1 = dpct::get_current_device();
- sycl::queue &q_ct1 = dev_ct1.default_queue();
-        FILE *fsource = NULL, *fvel_ext = NULL, *fd_obs = NULL, *fvp = NULL, *fsns = NULL,*fsns2 = NULL, *fsnr = NULL, *fimg = NULL, *flim = NULL, *fimg_lap = NULL;
+	_MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
+	dpct::device_ext &dev_ct1 = dpct::get_current_device();
+	sycl::queue &q_ct1 = dev_ct1.default_queue();
+	FILE *fsource = NULL, *fvel_ext = NULL, *fd_obs = NULL, *fvp = NULL, *fsns = NULL,*fsns2 = NULL, *fsnr = NULL, *fimg = NULL, *flim = NULL, *fimg_lap = NULL;
 
 	int iz, ix, it, is;
 
@@ -685,11 +686,7 @@ int main (int argc, char **argv)
 			}
 		}
 	}
-	// for(iz=0; iz<nz; iz++){
-	// 	for(ix=0; ix<nx; ix++){
-	// 		fprintf(foutput, " %f \n", img[ix][iz]);
-	// 	}
-	// }
+	
 	fwrite(*img,sizeof(float),nz*nx,fimg);
 
 	fwrite(*img_lap,sizeof(float),nz*nx,fimg_lap);
