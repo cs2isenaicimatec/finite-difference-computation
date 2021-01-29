@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <sys/time.h>
 
 void fd_init(int order, int nx, int nz, float dx, float dz);
 void fd_init_cuda(int order, int nxe, int nze);
@@ -289,6 +290,7 @@ int main (int argc, char **argv)
 {
         dpct::device_ext &dev_ct1 = dpct::get_current_device();
         sycl::queue &q_ct1 = dev_ct1.default_queue();
+	struct timeval startQueue,startCopyMem,endQueue,endCopyMem;
         read_input(argv[1]);
 
         printf("Local do arquivo: %s\n", file_path);
@@ -328,12 +330,15 @@ int main (int argc, char **argv)
         else
                 printf("Input reading was successful.\n");
         fclose(finput);
-
+	gettimeofday(&startCopyMem, NULL);
         // data copy
         q_ct1.memcpy(d_p, input_data, mtxBufferLength).wait();
         q_ct1.memcpy(d_coefs_x, coefs_x, coefsBufferLength).wait();
         q_ct1.memcpy(d_coefs_z, coefs_z, coefsBufferLength).wait();
-
+	gettimeofday(&endCopyMem, NULL);
+	float execTimeMem = ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000000;
+	printf("Copy memory successful.\n");
+	printf("> Copy memory Time    = %.10f (s)\n",execTimeMem);
         // kernel utilization
         /*
         DPCT1049:0: The workgroup size passed to the SYCL kernel may
@@ -341,6 +346,7 @@ int main (int argc, char **argv)
          * info::device::max_work_group_size. Adjust the workgroup size if
          * needed.
         */
+	gettimeofday(&startQueue, NULL);
         q_ct1.submit([&](sycl::handler &cgh) {
                 auto dpct_global_range = dimGrid * dimBlock;
 
@@ -365,15 +371,21 @@ int main (int argc, char **argv)
                                        d_coefs_z_ct6, item_ct1);
                     });
         });
-
-        output_data = (float*)malloc(mtxBufferLength);
+	gettimeofday(&endQueue, NULL);
+	float execTimeQueue = ((endQueue.tv_sec - startQueue.tv_sec)*1000000 + (endQueue.tv_usec - startQueue.tv_usec))/1000000;
+        printf("> Queue Time    = %.10f (s)\n",execTimeQueue);
+	output_data = (float*)malloc(mtxBufferLength);
         if(!output_data)
                 printf("Output memory allocation error!\n");
         else
                 printf("Output memory allocation was successful.\n");
         memset(output_data, 0, mtxBufferLength);
+	gettimeofday(&startCopyMem,NULL);
         q_ct1.memcpy(output_data, d_laplace, mtxBufferLength).wait();
-
+	float execTimeMem2 = ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000000;
+        gettimeofday(&endCopyMem,NULL);
+	printf("> Copy memory out Time    = %.10f (s)\n",execTimeMem2);
+	printf("> Exec time    = %.10f (s)\n", execTimeMem+execTimeQueue+execTimeMem2);
         // Writing output
         FILE *foutput;
         if((foutput = fopen("output_teste.bin", "wb")) == NULL)

@@ -4,7 +4,7 @@ C_SRCS = ./fd-source-code.dp.cpp
 CFLAGS = -O3 -w -arch=sm_60
 LIBS = -lm 
 
-all: stencil_code
+all:stencil_code
 
 stencil_code:
 	dpcpp -o $@ $(CFLAGS) $(C_SRCS) $(LIBS)
