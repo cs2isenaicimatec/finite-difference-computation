@@ -353,11 +353,13 @@ int main (int argc, char **argv)
 				*/
         // kernel utilization
 				{
+                                        gettimeofday(&startCopyMem, NULL);
 					sycl::buffer<float, 1> buf_input(input_data, sycl::range<1>(nxe*nze));
 					sycl::buffer<float, 1> buf_coefsx(coefs_x, sycl::range<1>(order+1));
 					sycl::buffer<float, 1> buf_coefsz(coefs_z, sycl::range<1>(order+1));
 					sycl::buffer<float, 1> buf_output(output_data, sycl::range<1>(nxe*nze));
-                                        
+                                        gettimeofday(&endCopyMem, NULL);
+                                        execTimeMem = ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000;
 					/*
 					DPCT1049:0: The workgroup size passed to the SYCL kernel may
 					* exceed the limit. To get the device limit, query
@@ -366,13 +368,11 @@ int main (int argc, char **argv)
 					*/
 					q_ct1.submit([&](sycl::handler &cgh) {
 						auto dpct_global_range = dimGrid * dimBlock;
-	                                        gettimeofday(&startCopyMem, NULL);
 						auto A_input = buf_input.get_access<sycl::access::mode::read_write>(cgh);
 						auto A_coefsx = buf_coefsx.get_access<sycl::access::mode::read_write>(cgh);
 						auto A_coefsz = buf_coefsz.get_access<sycl::access::mode::read_write>(cgh);
 						auto A_output = buf_output.get_access<sycl::access::mode::read_write>(cgh);
-                                                gettimeofday(&endCopyMem, NULL);
-	                                        execTimeMem = ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000;
+                                                
                                                 
 						auto order_ct0 = order;
 						auto nxe_ct1 = nxe;

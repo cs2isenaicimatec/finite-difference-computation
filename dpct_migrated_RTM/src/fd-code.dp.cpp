@@ -7,6 +7,9 @@ extern "C"{
 }
 #include <sys/time.h>
 
+
+struct timeval startCopyMem,endCopyMem;
+float execTimeMem = 0.0;
 /* file names */
 char *tmpdir = NULL, *vpfile = NULL, *datfile = NULL, *vel_ext_file = NULL;
 /* size */
@@ -245,7 +248,7 @@ void write_buffers(float **p, float **pp, float **v2, float *taperx, float *tape
 {
  dpct::device_ext &dev_ct1 = dpct::get_current_device();
  sycl::queue &q_ct1 = dev_ct1.default_queue();
-
+	gettimeofday(&startCopyMem, NULL);
         if(flag == 0){
                 q_ct1.memcpy(d_p, p[0], mtxBufferLength).wait();
                 q_ct1.memcpy(d_pp, pp[0], mtxBufferLength).wait();
@@ -262,6 +265,8 @@ void write_buffers(float **p, float **pp, float **v2, float *taperx, float *tape
                 q_ct1.memcpy(d_sis, d_obs[is], obsBufferLength).wait();
                 q_ct1.memcpy(d_img, imloc[0], imgBufferLength).wait();
         }
+	gettimeofday(&endCopyMem, NULL);
+        execTimeMem += ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000000;
 }
 // ============================ Propagation ============================
 void fd_forward(int order, float **p, float **pp, float **v2, int nz, int nx, int nt, int is, int sz, int *sx, float *srce, int propag)
@@ -764,6 +769,8 @@ int main (int argc, char **argv)
 	}
 	gettimeofday(&end, NULL);
 	float execTime= ((end.tv_sec - start.tv_sec)*1000000 + (end.tv_usec - start.tv_usec))/1000000;
+        float execTimeMem = ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000;
+        printf("> Copy memory Time    = %.2f (s)\n",execTimeMem);
 	printf("> Exec time = %.2f (s)\n", execTime);
         
 	fwrite(*img,sizeof(float),nz*nx,fimg);

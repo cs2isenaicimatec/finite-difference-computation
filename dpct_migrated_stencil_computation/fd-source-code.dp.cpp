@@ -378,12 +378,8 @@ int main (int argc, char **argv)
         else
                 printf("Output memory allocation was successful.\n");
         memset(output_data, 0, mtxBufferLength);
-	gettimeofday(&startCopyMem,NULL);
         q_ct1.memcpy(output_data, d_laplace, mtxBufferLength).wait();
-	gettimeofday(&endCopyMem,NULL);
-	float execTimeMem2 = ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000;
 	printf("> Copy memory Time    = %.2f (ms)\n",execTimeMem);
-	printf("> Copy memory out Time    = %.2f (ms)\n",execTimeMem2);
 	printf("> Exec time    = %.2f (ms)\n", execTimeMem+execTime+execTimeMem2);
         // Writing output
         FILE *foutput;

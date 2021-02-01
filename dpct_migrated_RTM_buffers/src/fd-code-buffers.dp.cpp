@@ -8,6 +8,8 @@ extern "C"{
 }
 #include <sys/time.h>
 
+struct timeval startCopyMem,endCopyMem;
+float execTimeMem = 0.0;
 /* file names */
 char *tmpdir = NULL, *vpfile = NULL, *datfile = NULL, *vel_ext_file = NULL;
 /* size */
@@ -245,6 +247,7 @@ void fd_forward(int order, float **p, float **pp, float **v2, int nz, int nx, in
 	sycl::range<3> dimBlock(1, sizeblock, sizeblock);
 
 	{
+		gettimeofday(&startCopyMem, NULL);
 		sycl::buffer<float, 1> *b_p = new sycl::buffer<float, 1>(p[0], sycl::range<1>(nxe*nze));
 		sycl::buffer<float, 1> *b_pp = new sycl::buffer<float, 1>(pp[0], sycl::range<1>(nxe*nze));
 		sycl::buffer<float, 1> b_v2(v2[0], sycl::range<1>(nxe*nze));
@@ -253,6 +256,8 @@ void fd_forward(int order, float **p, float **pp, float **v2, int nz, int nx, in
 		sycl::buffer<float, 1> b_taperx(taper_x, sycl::range<1>(nxb));
 		sycl::buffer<float, 1> b_taperz(taper_z, sycl::range<1>(nxb));
 		sycl::buffer<float, 1> *b_swap;
+		gettimeofday(&endCopyMem, NULL);
+		execTimeMem += ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000000;
 		for (int it = 0; it < nt; it++){
 			b_swap  = b_pp;
 			b_pp = b_p;
@@ -265,7 +270,7 @@ void fd_forward(int order, float **p, float **pp, float **v2, int nz, int nx, in
 				auto acc_pp = b_pp->get_access<sycl::access::mode::read_write>(cgh);
 				auto acc_taperx = b_taperx.get_access<sycl::access::mode::read_write>(cgh);
 				auto acc_taperz = b_taperz.get_access<sycl::access::mode::read_write>(cgh);
-
+				
 				cgh.parallel_for(
 					sycl::nd_range<3>(dimGridTaper * dimBlock,
 						dimBlock),
@@ -342,6 +347,7 @@ void fd_back(int order, float **p, float **pp, float **pr, float **ppr, float **
 	sycl::range<3> dimBlock(1, sizeblock, sizeblock);
 
 	{
+		gettimeofday(&startCopyMem, NULL);
 		sycl::buffer<float, 1> *b_p = new sycl::buffer<float, 1>(p[0], sycl::range<1>(nxe*nze));
 		sycl::buffer<float, 1> *b_pp = new sycl::buffer<float, 1>(pp[0], sycl::range<1>(nxe*nze));
 		sycl::buffer<float, 1> b_v2(v2[0], sycl::range<1>(nxe*nze));
@@ -354,6 +360,8 @@ void fd_back(int order, float **p, float **pp, float **pr, float **ppr, float **
 		sycl::buffer<float, 1> b_sis(d_obs[is], sycl::range<1>(nt*(nxe-(2*nxb))));
 		sycl::buffer<float, 1> b_img(imloc[0], sycl::range<1>((nxe-(2*nxb))*(nze-(2*nzb))));
 		sycl::buffer<float, 1> *b_swap;
+		gettimeofday(&endCopyMem, NULL);
+		execTimeMem += ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000000;
 
 		for(it=0; it<nt; it++){
 			if(it==0 || it==1){
