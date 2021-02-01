@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <sys/time.h>
 
 void fd_init(int order, int nx, int nz, float dx, float dz);
 void fd_init_cuda(int order, int nxe, int nze);
@@ -296,6 +297,7 @@ int main (int argc, char **argv)
 {
         dpct::device_ext &dev_ct1 = dpct::get_current_device();
         sycl::queue &q_ct1 = dev_ct1.default_queue();
+	struct timeval startQueue,startCopyMem,endQueue,endCopyMem;
         read_input(argv[1]);
 
         printf("Local do arquivo: %s\n", file_path);
@@ -327,11 +329,11 @@ int main (int argc, char **argv)
         else
                 printf("Input memory allocation was successful.\n");
 
-				output_data = (float*)malloc(mtxBufferLength);
-				if(!output_data)
-								printf("Output memory allocation error!\n");
-				else
-								printf("Output memory allocation was successful.\n");
+        output_data = (float*)malloc(mtxBufferLength);
+        if(!output_data)
+                printf("Output memory allocation error!\n");
+        else
+                printf("Output memory allocation was successful.\n");
 
         memset(input_data, 0, mtxBufferLength);
 
@@ -349,16 +351,20 @@ int main (int argc, char **argv)
 				*/
         // kernel utilization
 				{
+	                                gettimeofday(&startCopyMem, NULL);
 					sycl::buffer<float, 1> buf_input(input_data, sycl::range<1>(nxe*nze));
 					sycl::buffer<float, 1> buf_coefsx(coefs_x, sycl::range<1>(order+1));
 					sycl::buffer<float, 1> buf_coefsz(coefs_z, sycl::range<1>(order+1));
 					sycl::buffer<float, 1> buf_output(output_data, sycl::range<1>(nxe*nze));
+                                        gettimeofday(&endCopyMem, NULL);
+	                                float execTimeMem = ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000;
 					/*
 					DPCT1049:0: The workgroup size passed to the SYCL kernel may
 					* exceed the limit. To get the device limit, query
 					* info::device::max_work_group_size. Adjust the workgroup size if
 					* needed.
 					*/
+	                                gettimeofday(&startQueue, NULL);
 					q_ct1.submit([&](sycl::handler &cgh) {
 						auto dpct_global_range = dimGrid * dimBlock;
 						auto A_input = buf_input.get_access<sycl::access::mode::read_write>(cgh);
@@ -385,7 +391,9 @@ int main (int argc, char **argv)
 								kernel_lap(order_ct0, nxe_ct1, nze_ct2, A_input, A_output,
 									A_coefsx, A_coefsz, item_ct1);
 								});
-							});
+                                        });
+                                        gettimeofday(&endQueue, NULL);
+	                                float execTimeQueue = ((endQueue.tv_sec - startQueue.tv_sec)*1000000 + (endQueue.tv_usec - startQueue.tv_usec))/1000;
 				} //scope to destroy buffers
 
         /*
@@ -393,6 +401,9 @@ int main (int argc, char **argv)
         q_ct1.memcpy(output_data, d_laplace, mtxBufferLength).wait();
 				*/
         // Writing output
+        printf("> Write buffers Time    = %.2f (ms)\n",execTimeMem);
+        printf("> Queue Time    = %.2f (ms)\n",execTimeQueue);
+	printf("> Exec time    = %.2f (ms)\n", execTimeMem+execTimeQueue+execTimeMem2);
         FILE *foutput;
         if((foutput = fopen("output_teste.bin", "wb")) == NULL)
                 printf("Unable to open file!\n");

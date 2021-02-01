@@ -6,6 +6,7 @@ extern "C"{
 #include "functions.h"
 #include <cmath>
 }
+#include <sys/time.h>
 
 /* file names */
 char *tmpdir = NULL, *vpfile = NULL, *datfile = NULL, *vel_ext_file = NULL;
@@ -542,6 +543,7 @@ int main (int argc, char **argv)
 	_MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
 	dpct::device_ext &dev_ct1 = dpct::get_current_device();
 	sycl::queue &q_ct1 = dev_ct1.default_queue();
+	struct timeval start,end;
 	FILE *fsource = NULL, *fvel_ext = NULL, *fd_obs = NULL, *fvp = NULL, *fsns = NULL,*fsns2 = NULL, *fsnr = NULL, *fimg = NULL, *flim = NULL, *fimg_lap = NULL;
 
 	int iz, ix, it, is;
@@ -552,6 +554,7 @@ int main (int argc, char **argv)
 	float **PP,**P,**PPR,**PR,**tmp;
 	float ***swf, ***snaps, **vel2, ***d_obs, ***vel_ext_rnd;
 	float **imloc, **img, **img_lap;
+	gettimeofday(&start, NULL);
 	read_input(argv[1]);
 	init_args();
 
@@ -686,7 +689,10 @@ int main (int argc, char **argv)
 			}
 		}
 	}
-	
+	gettimeofday(&end, NULL);
+	float execTime= ((end.tv_sec - start.tv_sec)*1000000 + (end.tv_usec - start.tv_usec))/1000000;
+	printf("> Exec time = %.2f (s)\n", execTime);
+
 	fwrite(*img,sizeof(float),nz*nx,fimg);
 
 	fwrite(*img_lap,sizeof(float),nz*nx,fimg_lap);

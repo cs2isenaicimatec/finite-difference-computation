@@ -336,9 +336,8 @@ int main (int argc, char **argv)
         q_ct1.memcpy(d_coefs_x, coefs_x, coefsBufferLength).wait();
         q_ct1.memcpy(d_coefs_z, coefs_z, coefsBufferLength).wait();
 	gettimeofday(&endCopyMem, NULL);
-	float execTimeMem = ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000000;
+	float execTimeMem = ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000;
 	printf("Copy memory successful.\n");
-	printf("> Copy memory Time    = %.10f (s)\n",execTimeMem);
         // kernel utilization
         /*
         DPCT1049:0: The workgroup size passed to the SYCL kernel may
@@ -372,8 +371,7 @@ int main (int argc, char **argv)
                     });
         });
 	gettimeofday(&endQueue, NULL);
-	float execTimeQueue = ((endQueue.tv_sec - startQueue.tv_sec)*1000000 + (endQueue.tv_usec - startQueue.tv_usec))/1000000;
-        printf("> Queue Time    = %.10f (s)\n",execTimeQueue);
+	float execTimeQueue = ((endQueue.tv_sec - startQueue.tv_sec)*1000000 + (endQueue.tv_usec - startQueue.tv_usec))/1000;
 	output_data = (float*)malloc(mtxBufferLength);
         if(!output_data)
                 printf("Output memory allocation error!\n");
@@ -382,10 +380,12 @@ int main (int argc, char **argv)
         memset(output_data, 0, mtxBufferLength);
 	gettimeofday(&startCopyMem,NULL);
         q_ct1.memcpy(output_data, d_laplace, mtxBufferLength).wait();
-	float execTimeMem2 = ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000000;
+	float execTimeMem2 = ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000;
         gettimeofday(&endCopyMem,NULL);
-	printf("> Copy memory out Time    = %.10f (s)\n",execTimeMem2);
-	printf("> Exec time    = %.10f (s)\n", execTimeMem+execTimeQueue+execTimeMem2);
+	printf("> Copy memory Time    = %.2f (ms)\n",execTimeMem);
+        printf("> Queue Time    = %.2f (ms)\n",execTimeQueue);
+	printf("> Copy memory out Time    = %.2f (ms)\n",execTimeMem2);
+	printf("> Exec time    = %.2f (ms)\n", execTimeMem+execTimeQueue+execTimeMem2);
         // Writing output
         FILE *foutput;
         if((foutput = fopen("output_teste.bin", "wb")) == NULL)
