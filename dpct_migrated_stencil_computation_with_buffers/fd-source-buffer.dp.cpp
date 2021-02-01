@@ -297,8 +297,9 @@ int main (int argc, char **argv)
 {
         dpct::device_ext &dev_ct1 = dpct::get_current_device();
         sycl::queue &q_ct1 = dev_ct1.default_queue();
-	struct timeval startQueue,startCopyMem,endQueue,endCopyMem;
-	float execTimeMem, execTimeQueue;
+	struct timeval start,startCopyMem,end,endCopyMem;
+	float execTimeMem;
+        gettimeofday(&start, NULL);
         read_input(argv[1]);
 
         printf("Local do arquivo: %s\n", file_path);
@@ -352,27 +353,27 @@ int main (int argc, char **argv)
 				*/
         // kernel utilization
 				{
-	                                gettimeofday(&startCopyMem, NULL);
 					sycl::buffer<float, 1> buf_input(input_data, sycl::range<1>(nxe*nze));
 					sycl::buffer<float, 1> buf_coefsx(coefs_x, sycl::range<1>(order+1));
 					sycl::buffer<float, 1> buf_coefsz(coefs_z, sycl::range<1>(order+1));
 					sycl::buffer<float, 1> buf_output(output_data, sycl::range<1>(nxe*nze));
-                                        gettimeofday(&endCopyMem, NULL);
-	                                execTimeMem = ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000;
+                                        
 					/*
 					DPCT1049:0: The workgroup size passed to the SYCL kernel may
 					* exceed the limit. To get the device limit, query
 					* info::device::max_work_group_size. Adjust the workgroup size if
 					* needed.
 					*/
-	                                gettimeofday(&startQueue, NULL);
 					q_ct1.submit([&](sycl::handler &cgh) {
 						auto dpct_global_range = dimGrid * dimBlock;
+	                                        gettimeofday(&startCopyMem, NULL);
 						auto A_input = buf_input.get_access<sycl::access::mode::read_write>(cgh);
 						auto A_coefsx = buf_coefsx.get_access<sycl::access::mode::read_write>(cgh);
 						auto A_coefsz = buf_coefsz.get_access<sycl::access::mode::read_write>(cgh);
 						auto A_output = buf_output.get_access<sycl::access::mode::read_write>(cgh);
-
+                                                gettimeofday(&endCopyMem, NULL);
+	                                        execTimeMem = ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000;
+                                                
 						auto order_ct0 = order;
 						auto nxe_ct1 = nxe;
 						auto nze_ct2 = nze;
@@ -393,18 +394,18 @@ int main (int argc, char **argv)
 									A_coefsx, A_coefsz, item_ct1);
 								});
                                         });
-                                        gettimeofday(&endQueue, NULL);
-	                                execTimeQueue = ((endQueue.tv_sec - startQueue.tv_sec)*1000000 + (endQueue.tv_usec - startQueue.tv_usec))/1000;
+                                        
 				} //scope to destroy buffers
 
         /*
         memset(output_data, 0, mtxBufferLength);
         q_ct1.memcpy(output_data, d_laplace, mtxBufferLength).wait();
 				*/
+        gettimeofday(&end, NULL);
+        float execTime = ((end.tv_sec - start.tv_sec)*1000000 + (end.tv_usec - start.tv_usec))/1000;
         // Writing output
         printf("> Write buffers Time    = %.2f (ms)\n",execTimeMem);
-        printf("> Queue Time    = %.2f (ms)\n",execTimeQueue);
-	printf("> Exec time    = %.2f (ms)\n", execTimeMem+execTimeQueue);
+	printf("> Exec time    = %.2f (ms)\n", execTimeMem+execTime);
         FILE *foutput;
         if((foutput = fopen("output_teste.bin", "wb")) == NULL)
                 printf("Unable to open file!\n");

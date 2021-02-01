@@ -290,7 +290,8 @@ int main (int argc, char **argv)
 {
         dpct::device_ext &dev_ct1 = dpct::get_current_device();
         sycl::queue &q_ct1 = dev_ct1.default_queue();
-	struct timeval startQueue,startCopyMem,endQueue,endCopyMem;
+	struct timeval start,startCopyMem,end,endCopyMem;
+	gettimeofday(&start, NULL);
         read_input(argv[1]);
 
         printf("Local do arquivo: %s\n", file_path);
@@ -345,7 +346,6 @@ int main (int argc, char **argv)
          * info::device::max_work_group_size. Adjust the workgroup size if
          * needed.
         */
-	gettimeofday(&startQueue, NULL);
         q_ct1.submit([&](sycl::handler &cgh) {
                 auto dpct_global_range = dimGrid * dimBlock;
 
@@ -370,8 +370,8 @@ int main (int argc, char **argv)
                                        d_coefs_z_ct6, item_ct1);
                     });
         });
-	gettimeofday(&endQueue, NULL);
-	float execTimeQueue = ((endQueue.tv_sec - startQueue.tv_sec)*1000000 + (endQueue.tv_usec - startQueue.tv_usec))/1000;
+	gettimeofday(&end, NULL);
+	float execTime = ((end.tv_sec - start.tv_sec)*1000000 + (end.tv_usec - start.tv_usec))/1000;
 	output_data = (float*)malloc(mtxBufferLength);
         if(!output_data)
                 printf("Output memory allocation error!\n");
@@ -383,9 +383,8 @@ int main (int argc, char **argv)
 	gettimeofday(&endCopyMem,NULL);
 	float execTimeMem2 = ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000;
 	printf("> Copy memory Time    = %.2f (ms)\n",execTimeMem);
-        printf("> Queue Time    = %.2f (ms)\n",execTimeQueue);
 	printf("> Copy memory out Time    = %.2f (ms)\n",execTimeMem2);
-	printf("> Exec time    = %.2f (ms)\n", execTimeMem+execTimeQueue+execTimeMem2);
+	printf("> Exec time    = %.2f (ms)\n", execTimeMem+execTime+execTimeMem2);
         // Writing output
         FILE *foutput;
         if((foutput = fopen("output_teste.bin", "wb")) == NULL)
