@@ -1,4 +1,4 @@
-C_SRCS = ./fd-source-code.dp.cpp
+C_SRCS = ./fd-source-buffer.dp.cpp
 
 
 CFLAGS = -O3 -w -arch=sm_60

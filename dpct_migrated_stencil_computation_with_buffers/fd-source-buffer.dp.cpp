@@ -298,6 +298,7 @@ int main (int argc, char **argv)
         dpct::device_ext &dev_ct1 = dpct::get_current_device();
         sycl::queue &q_ct1 = dev_ct1.default_queue();
 	struct timeval startQueue,startCopyMem,endQueue,endCopyMem;
+	float execTimeMem, execTimeQueue;
         read_input(argv[1]);
 
         printf("Local do arquivo: %s\n", file_path);
@@ -357,7 +358,7 @@ int main (int argc, char **argv)
 					sycl::buffer<float, 1> buf_coefsz(coefs_z, sycl::range<1>(order+1));
 					sycl::buffer<float, 1> buf_output(output_data, sycl::range<1>(nxe*nze));
                                         gettimeofday(&endCopyMem, NULL);
-	                                float execTimeMem = ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000;
+	                                execTimeMem = ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000;
 					/*
 					DPCT1049:0: The workgroup size passed to the SYCL kernel may
 					* exceed the limit. To get the device limit, query
@@ -393,7 +394,7 @@ int main (int argc, char **argv)
 								});
                                         });
                                         gettimeofday(&endQueue, NULL);
-	                                float execTimeQueue = ((endQueue.tv_sec - startQueue.tv_sec)*1000000 + (endQueue.tv_usec - startQueue.tv_usec))/1000;
+	                                execTimeQueue = ((endQueue.tv_sec - startQueue.tv_sec)*1000000 + (endQueue.tv_usec - startQueue.tv_usec))/1000;
 				} //scope to destroy buffers
 
         /*
@@ -403,7 +404,7 @@ int main (int argc, char **argv)
         // Writing output
         printf("> Write buffers Time    = %.2f (ms)\n",execTimeMem);
         printf("> Queue Time    = %.2f (ms)\n",execTimeQueue);
-	printf("> Exec time    = %.2f (ms)\n", execTimeMem+execTimeQueue+execTimeMem2);
+	printf("> Exec time    = %.2f (ms)\n", execTimeMem+execTimeQueue);
         FILE *foutput;
         if((foutput = fopen("output_teste.bin", "wb")) == NULL)
                 printf("Unable to open file!\n");
@@ -415,9 +416,6 @@ int main (int argc, char **argv)
         else
                 printf("Output writing was successful.\n");
         fclose(foutput);
-				for(int i = 1321; i < 1341; i++){
-                printf("%.15f\n", output_data[i]);
-        }
         // free memory device
         free_memory();
         return 0;

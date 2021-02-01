@@ -380,8 +380,8 @@ int main (int argc, char **argv)
         memset(output_data, 0, mtxBufferLength);
 	gettimeofday(&startCopyMem,NULL);
         q_ct1.memcpy(output_data, d_laplace, mtxBufferLength).wait();
+	gettimeofday(&endCopyMem,NULL);
 	float execTimeMem2 = ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000;
-        gettimeofday(&endCopyMem,NULL);
 	printf("> Copy memory Time    = %.2f (ms)\n",execTimeMem);
         printf("> Queue Time    = %.2f (ms)\n",execTimeQueue);
 	printf("> Copy memory out Time    = %.2f (ms)\n",execTimeMem2);
