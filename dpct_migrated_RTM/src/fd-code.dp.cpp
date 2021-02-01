@@ -266,7 +266,7 @@ void write_buffers(float **p, float **pp, float **v2, float *taperx, float *tape
                 q_ct1.memcpy(d_img, imloc[0], imgBufferLength).wait();
         }
 	gettimeofday(&endCopyMem, NULL);
-        execTimeMem += ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000000;
+        execTimeMem += ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000;
 }
 // ============================ Propagation ============================
 void fd_forward(int order, float **p, float **pp, float **v2, int nz, int nx, int nt, int is, int sz, int *sx, float *srce, int propag)
@@ -656,7 +656,6 @@ int main (int argc, char **argv)
 		memset(**vel_ext_rnd,0,nze*nxe*ns*sizeof(float));
 		fvel_ext = fopen(vel_ext_file,"r");
 		fread(**vel_ext_rnd,sizeof(float),nze*nxe*ns,fvel_ext);
-		printf("aqui\n");
 		fclose(fvel_ext);
 	}
 	d_obs = alloc3float(nt,nx,ns);
@@ -769,8 +768,7 @@ int main (int argc, char **argv)
 	}
 	gettimeofday(&end, NULL);
 	float execTime= ((end.tv_sec - start.tv_sec)*1000000 + (end.tv_usec - start.tv_usec))/1000000;
-        float execTimeMem = ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000;
-        printf("> Copy memory Time    = %.2f (s)\n",execTimeMem);
+        printf("> Copy memory Time    = %.2f (ms)\n",execTimeMem);
 	printf("> Exec time = %.2f (s)\n", execTime);
         
 	fwrite(*img,sizeof(float),nz*nx,fimg);

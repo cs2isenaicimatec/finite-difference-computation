@@ -257,7 +257,7 @@ void fd_forward(int order, float **p, float **pp, float **v2, int nz, int nx, in
 		sycl::buffer<float, 1> b_taperz(taper_z, sycl::range<1>(nxb));
 		sycl::buffer<float, 1> *b_swap;
 		gettimeofday(&endCopyMem, NULL);
-		execTimeMem += ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000000;
+		execTimeMem += ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000;
 		for (int it = 0; it < nt; it++){
 			b_swap  = b_pp;
 			b_pp = b_p;
@@ -361,7 +361,7 @@ void fd_back(int order, float **p, float **pp, float **pr, float **ppr, float **
 		sycl::buffer<float, 1> b_img(imloc[0], sycl::range<1>((nxe-(2*nxb))*(nze-(2*nzb))));
 		sycl::buffer<float, 1> *b_swap;
 		gettimeofday(&endCopyMem, NULL);
-		execTimeMem += ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000000;
+		execTimeMem += ((endCopyMem.tv_sec - startCopyMem.tv_sec)*1000000 + (endCopyMem.tv_usec - startCopyMem.tv_usec))/1000;
 
 		for(it=0; it<nt; it++){
 			if(it==0 || it==1){
@@ -586,7 +586,6 @@ int main (int argc, char **argv)
 		memset(**vel_ext_rnd,0,nze*nxe*ns*sizeof(float));
 		fvel_ext = fopen(vel_ext_file,"r");
 		fread(**vel_ext_rnd,sizeof(float),nze*nxe*ns,fvel_ext);
-		printf("aqui\n");
 		fclose(fvel_ext);
 	}
 	d_obs = alloc3float(nt,nx,ns);
@@ -699,8 +698,8 @@ int main (int argc, char **argv)
 	}
 	gettimeofday(&end, NULL);
 	float execTime= ((end.tv_sec - start.tv_sec)*1000000 + (end.tv_usec - start.tv_usec))/1000000;
-	printf("> Exec time = %.2f (s)\n", execTime);
-
+	printf("> Copy memory Time    = %.2f (ms)\n",execTimeMem);
+        printf("> Exec time = %.2f (s)\n", execTime);
 	fwrite(*img,sizeof(float),nz*nx,fimg);
 
 	fwrite(*img_lap,sizeof(float),nz*nx,fimg_lap);
